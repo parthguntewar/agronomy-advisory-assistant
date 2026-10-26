@@ -169,31 +169,39 @@ Streamlit will launch locally in your browser at `http://localhost:8501`.
 
 ## 5. User Interface Features & Academic Evaluation Guide
 
-The Streamlit interface (`app.py`) provides an interactive testbed designed for academic presentations:
+The redesigned Streamlit interface (`app.py`) provides a professional, research-grade agricultural intelligence dashboard:
 
-1. **System & Model Status Sidebar:**
-   - Real-time Ollama connectivity indicator and model discovery.
-   - Vector store index health check (confirms active ChromaDB storage).
-   - Display of calibrated relevance gate thresholds (`Sufficient ≥ 0.50`, `Min Viable ≥ 0.30`).
-   - Active provider selector (`ollama`, `mock`, `api`).
-2. **Farmer Query Console & Quick Benchmark Buttons:**
-   - Text input for custom natural language queries.
-   - 5 Quick-Load benchmark buttons matching scientific evaluation scenarios:
-     - 🌾 **Paddy Stem Borer Control** (Normal in-domain query → answered with evidence).
-     - ❓ **Ambiguous Symptoms (No Crop)** (Triggers pre-retrieval crop clarification).
-     - 🌦️ **Weather & PM Kisan Inquiry** (Triggers dynamic abstention with official portal links).
-     - 💻 **React/Node.js Question** (Triggers off-topic safe abstention).
-     - 🌾 **Dragon Fruit Winter Grafting** (Unindexed crop → rejected by Relevance Gate).
-3. **Live Pipeline Execution Trace:**
-   - Visual breadcrumb pills showing the exact sequence of stages traversed for the query.
-4. **Structured Advisory Result Card:**
-   - Color-coded status banners distinguishing confident answers, low-confidence warnings, and safe abstentions.
-   - Grounded advisory text citing specific KCC Record IDs.
-   - Prominent uncertainty notices whenever evidence relevance is marginal.
-5. **Interactive Diagnostic Tabs:**
-   - **📚 Supporting Evidence Chunks:** Expandable cards showing Chunk ID, Clean Crop, Location, Year, Cosine Similarity Score, and verbatim KCC Transcripts.
-   - **🛡️ Five-Stage Guard Diagnostics:** Detailed metrics for QueryGuard, RelevanceGate, AnswerGenerator, and PostGenerationVerifier. Any bypassed stage displays `Stage not executed (safely bypassed)`.
-   - **📜 Raw Trace & JSON:** Full plain-text trace from `to_display_text()` and raw JSON diagnostics for evaluators.
+1. **Brand Navigation & System Status Header:**
+   - Top banner displaying "Agronomy Advisory Assistant: Evidence-grounded agricultural intelligence".
+   - Compact live status indicators for Ollama runtime connectivity and active ChromaDB vector index.
+   - Restrained tab navigation across three core operational views:
+     - **Advisory Workspace:** Primary query interface, guided benchmark scenarios, structured advice cards, citations, and safety notices.
+     - **Evidence Explorer:** Detailed inspection of retrieved historical KCC records with metadata, similarity scores, and long-form transcripts.
+     - **System Diagnostics:** Transparent audit trail of QueryGuard, AgronomyRetriever, RelevanceGate, AnswerGenerator, and PostGenerationVerifier. Stages that did not run display as `Not executed`.
+
+2. **Main Advisory Workspace:**
+   - Clean, high-contrast query input with actionable placeholder guidance.
+   - Primary "Generate Advisory" action button.
+   - Five standardized academic benchmark cards for reproducible evaluation:
+     - **Paddy Stem Borer Control** (Normal in-domain query -> answered with grounded evidence).
+     - **Ambiguous Symptoms (No Crop)** (Disease question missing crop name -> triggers pre-retrieval clarification).
+     - **Weather & PM Kisan Inquiry** (Dynamic time-sensitive request -> triggers safe abstention with official portals).
+     - **React/Node.js Technical Query** (Non-agricultural inquiry -> triggers off-topic safe abstention).
+     - **Dragon Fruit Winter Grafting** (Unindexed crop -> rejected by post-retrieval Relevance Gate).
+   - Execution progress indicator while the guarded RAG pipeline runs.
+
+3. **Advisory Results & Evidence Attribution:**
+   - Visual execution breadcrumbs highlighting the path traversed through the pipeline.
+   - Structured result panel with clear status badges, verified advisory text, uncertainty notifications, and source citations.
+   - High-contrast regulatory disclaimer detailing limitations of historical KCC records and the necessity of independent expert verification.
+
+4. **Evidence Explorer:**
+   - Expandable evidence cards displaying Crop, Location, Year, Record ID, and Cosine Similarity Score.
+   - Clear distinction between historical call-centre transcripts and modern generated advice.
+
+5. **System Diagnostics & Configuration:**
+   - Live stage-by-stage audit showing inputs, verdicts, and outputs. Stages that did not execute are cleanly marked `Not executed`.
+   - Compact configuration panel in the sidebar for provider selection (`ollama`, `mock`, `api`) and active safety threshold inspection.
 
 ---
 

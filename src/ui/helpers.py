@@ -3,6 +3,7 @@ UI Helper functions and diagnostics extraction for the Agronomy Advisory Assista
 
 Provides data transformation and diagnostic inspection for the Streamlit UI,
 ensuring genuine pipeline results are surfaced without fabricating values.
+Strictly free of emojis.
 """
 
 from __future__ import annotations
@@ -52,7 +53,7 @@ def check_ollama_service(base_url: Optional[str] = None) -> Dict[str, Any]:
 
 
 def format_stage_badge(stage_name: str) -> str:
-    """Formats a pipeline stage into a clean display label."""
+    """Formats a pipeline stage into a clean display label without emojis."""
     mapping = {
         "QueryGuard": "Stage 1: QueryGuard",
         "Retrieval": "Stage 2: Vector Retrieval",
@@ -61,7 +62,7 @@ def format_stage_badge(stage_name: str) -> str:
         "Verification": "Stage 5: Post-Verifier",
         "Abstained(OffTopic)": "Abstained (Off-Topic)",
         "Abstained(Dynamic)": "Abstained (Real-Time)",
-        "Clarification(Requested)": "Clarification Needed",
+        "Clarification(Requested)": "Clarification Required",
     }
     return mapping.get(stage_name, stage_name)
 
@@ -70,10 +71,10 @@ def extract_pipeline_diagnostics(result: PipelineResult) -> Dict[str, Any]:
     """
     Safely extracts diagnostic fields from a PipelineResult.
     Any unexposed or unreached stage returns 'Not exposed by pipeline'
-    or 'Stage not executed (safely bypassed)' rather than inventing values.
+    or 'Not executed' rather than inventing values.
     """
     NOT_EXPOSED = "Not exposed by pipeline"
-    NOT_REACHED = "Stage not executed (safely bypassed)"
+    NOT_REACHED = "Not executed"
 
     # Stage 1: QueryGuard
     guard_info = {

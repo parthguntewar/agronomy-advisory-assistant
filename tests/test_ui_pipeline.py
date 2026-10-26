@@ -188,10 +188,10 @@ class TestUIHelpers(unittest.TestCase):
         diag = extract_pipeline_diagnostics(result)
         self.assertFalse(diag["was_answered"])
         self.assertEqual(diag["guard"]["action"], "abstain_offtopic")
-        # Bypassed stages must report safely bypassed
-        self.assertIn("safely bypassed", diag["gate"]["verdict"])
-        self.assertIn("safely bypassed", diag["generation"]["status"])
-        self.assertIn("safely bypassed", diag["verification"]["status"])
+        # Bypassed stages must report 'Not executed'
+        self.assertEqual(diag["gate"]["verdict"], "Not executed")
+        self.assertEqual(diag["generation"]["status"], "Not executed")
+        self.assertEqual(diag["verification"]["status"], "Not executed")
 
     def test_extract_pipeline_diagnostics_verifier_blocked(self):
         """When an answer is blocked for hallucinations, diagnostics must report blocked status and issues."""
