@@ -1,0 +1,19 @@
+{
+  "dataset_source": "KCC-Krishi RAG/SFT Advisory Corpus",
+  "source_url": "https://huggingface.co/datasets/uralstech/kcc-krishi-rag-sft-advisory-corpus",
+  "original_provenance": "Kisan Call Centre Transcripts, Ministry of Agriculture and Farmers Welfare, Data.gov.in / AIKosh",
+  "license_notes": "GODL-India (source) & URAV Advanced Learning Systems Pvt. Ltd. (processing/QC)",
+  "license_tag": "other (research and demonstration only; non-authoritative; no warranty)",
+  "files": [
+    {
+      "filename": "rag_knowledge_sample_30.jsonl",
+      "count": 30,
+      "description": "Validated agricultural advisory records for RAG knowledge-base testing across major crops"
+    },
+    {
+      "filename": "evaluation_abstention_sample_20.jsonl",
+      "count": 20,
+      "description": "Curated evaluation cases for testing hallucination guarding, out-of-domain refusal, and safe abstention"
+    }
+  ]
+}

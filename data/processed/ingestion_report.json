@@ -1,0 +1,76 @@
+{
+  "source_input_file": "C:\\Users\\parth\\Desktop\\ai project\\data\\sample\\rag_knowledge_sample_30.jsonl",
+  "processed_output_file": "C:\\Users\\parth\\Desktop\\ai project\\data\\processed\\knowledge_base.jsonl",
+  "total_records_processed": 30,
+  "valid_chunks_retained": 26,
+  "rejected_records_count": 4,
+  "retention_rate_pct": 86.67,
+  "rejection_breakdown": {
+    "high_qc_severity_corruption": 4
+  },
+  "domain_distribution": {
+    "plant_protection": 13,
+    "nutrient_management": 7,
+    "varieties": 3,
+    "cultural_practices": 2,
+    "weed_management": 1
+  },
+  "crop_distribution": {
+    "Paddy (Dhan)": 6,
+    "Bhindi(Okra/Ladysfinger)": 2,
+    "Cotton (Kapas)": 2,
+    "Tomato": 2,
+    "Green Gram (Moong Bean/ Moong)": 2,
+    "Satawar": 1,
+    "Guava": 1,
+    "Pomegranate": 1,
+    "Tea": 1,
+    "Chillies": 1,
+    "Groundnut (pea nut/mung phalli)": 1,
+    "Black Gram (urd bean)": 1,
+    "Mustard": 1,
+    "Coconut": 1,
+    "Turmeric": 1,
+    "Brinjal": 1,
+    "Ber": 1
+  },
+  "state_distribution": {
+    "UTTAR PRADESH": 4,
+    "TAMILNADU": 4,
+    "MAHARASHTRA": 4,
+    "ODISHA": 3,
+    "ANDHRA PRADESH": 3,
+    "TELANGANA": 2,
+    "WEST BENGAL": 1,
+    "ASSAM": 1,
+    "RAJASTHAN": 1,
+    "PUNJAB": 1,
+    "GUJARAT": 1,
+    "MADHYA PRADESH": 1
+  },
+  "rag_mode_distribution": {
+    "use_as_evidence": 26
+  },
+  "sample_rejections": [
+    {
+      "row_index": 4,
+      "example_id": "kcc_00018845",
+      "reason": "high_qc_severity_corruption"
+    },
+    {
+      "row_index": 6,
+      "example_id": "kcc_00094206",
+      "reason": "high_qc_severity_corruption"
+    },
+    {
+      "row_index": 16,
+      "example_id": "kcc_00638911",
+      "reason": "high_qc_severity_corruption"
+    },
+    {
+      "row_index": 28,
+      "example_id": "kcc_00214059",
+      "reason": "high_qc_severity_corruption"
+    }
+  ]
+}
