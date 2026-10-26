@@ -1,14 +1,15 @@
 # Agronomy Advisory Assistant: Hallucination-Guarded RAG Pipeline
 
 **Project Title:** Agronomy Advisory Assistant with Hallucination-Guarded RAG & Local Dialect Support  
-**Current Phase:** 4 — Language Model Integration (Modular LLM Providers & Grounded Synthesis)  
-**Target OS:** Windows 11 (PowerShell) / Python 3.12+
+**Current Phase:** 5 — User-Facing Application (Streamlit Academic Demonstration Interface)  
+**Target OS:** Windows 11 (PowerShell) / Python 3.12+  
+**Repository:** [https://github.com/parthguntewar/agronomy-advisory-assistant](https://github.com/parthguntewar/agronomy-advisory-assistant)
 
 ---
 
 ## 1. Overview
 
-This project builds a modular, safety-layered Retrieval-Augmented Generation (RAG) pipeline for agricultural advisory evidence, grounded in historical Kisan Call Centre (KCC) records.
+This project builds a modular, safety-layered Retrieval-Augmented Generation (RAG) pipeline and academic demonstration interface for agricultural advisory evidence, grounded in historical Kisan Call Centre (KCC) records.
 
 ### Phase Summary
 
@@ -18,17 +19,17 @@ This project builds a modular, safety-layered Retrieval-Augmented Generation (RA
 | **2** | Data ingestion, quality filtering, and semantic retrieval pipeline | ✅ Done |
 | **3** | Hallucination guard, relevance gating, and safe abstention pipeline | ✅ Done |
 | **4** | Clean LLM provider interface (Mock, Ollama, API) & grounded answer generation | ✅ Done |
-| **5** | Interactive Chatbot UI with Local Dialect Support | 🔜 Next |
+| **5** | User-facing Streamlit application with live pipeline diagnostics & evidence inspector | ✅ Done |
 
 > **CRITICAL AGRONOMIC DISCLAIMER:**  
 > This project indexes historical Kisan Call Centre (KCC) records for research and evaluation. It **does NOT prescribe or automate agricultural chemical advice**. Historical recommendations (dating back to 2014–2024) may contain restricted chemicals, outdated formulations, or regional inaccuracies. All agrochemical decisions require field validation by qualified extension specialists (KVK / SAU) and inspection of active product labels.
 
 ---
 
-## 2. Guarded RAG Architecture with Modular Generation
+## 2. Five-Stage Guarded RAG Architecture
 
 ```
-Farmer Query
+Farmer Query (Entered via Streamlit UI or CLI)
      │
      ▼
 [Stage 1] QueryGuard (pre-retrieval)
@@ -49,8 +50,8 @@ Farmer Query
 [Stage 4] AnswerGenerator & LLM Provider Layer
      │   Strict grounding prompt (cite record IDs, no fabricated chemicals)
      │   Delegates to pluggable LLMProvider:
+     │     ├─ OllamaProvider (local private inference on Windows, e.g. Llama 3.2)
      │     ├─ MockProvider (default offline, deterministic, zero-network)
-     │     ├─ OllamaProvider (local private inference, e.g. Llama 3.2 on Windows)
      │     └─ APIProvider (cloud OpenAI-compatible endpoint with env API key)
      │   Graceful fallback to structured evidence template if runtime fails.
      ▼
@@ -59,10 +60,13 @@ Farmer Query
      │  ├─ PASSED_WITH_WARNINGS → Present with caution warnings
      │  └─ PASSED              → Safe to present to farmer
      ▼
-Structured Advisory Response (GeneratedAnswer with source IDs & disclaimers)
+Streamlit UI Display:
+  • Structured Advisory Response (with Cited Record IDs & Disclaimers)
+  • Real-Time Pipeline Diagnostic Trace
+  • Expandable Supporting Evidence Transcripts
 ```
 
-**Safety limitations (not eliminated by this system):**
+**Scientific Safety Limitations (Not Eliminated by this System):**
 - The system **reduces** hallucinations; it **does NOT eliminate** them.
 - Small local models (1B–3B parameters) may occasionally fail strict negative constraints, which is why the Stage 5 post-generation verifier is mandatory.
 - The verifier performs structural and token-level grounding checks, not full natural language entailment (NLI).
@@ -70,39 +74,16 @@ Structured Advisory Response (GeneratedAnswer with source IDs & disclaimers)
 
 ---
 
-## 3. Environment & LLM Integration Comparison
-
-### System Hardware & Environment Profile
-- **OS:** Windows 11 Home (x64)
-- **Python:** 3.12.6
-- **Installed Runtimes:** Ollama (`ollama.exe`) is installed locally at `C:\Users\parth\AppData\Local\Programs\Ollama\ollama.exe` with `llama3.2:latest` (2.0 GB) present.
-- **Hardware:** Intel UHD Graphics 620 + NVIDIA GeForce MX250 (2 GB VRAM), 16 GB Total RAM.
-
-### Options Evaluated
-
-| Dimension | Option A: Local Ollama (`llama3.2:latest`) | Option B: Cloud API (`gpt-4o-mini` / Groq) | Option C: Mock Provider |
-| :--- | :--- | :--- | :--- |
-| **Cost** | **$0 (100% Free)** | Pay-per-token; requires credit card / API credits | **$0** (Offline) |
-| **Privacy** | **100% Local**: No farmer query leaves laptop | Prompts transmitted to external cloud servers | **100% Local** |
-| **Windows Compatibility** | Native Windows executable running on `127.0.0.1:11434` | Full HTTPS compatibility via standard HTTP client | Native Python |
-| **Hardware Fit** | 2.0 GB quantized model runs on CPU / hybrid offload | Zero local compute/VRAM overhead | Minimal CPU/RAM |
-| **Grounding Adherence** | Good on basic extraction; occasional drift under complex rules | High instruction adherence and strict citation accuracy | Deterministic template |
-| **Setup Complexity** | Zero extra download needed (already installed) | Requires signing up and generating API key | Zero setup |
-
-### Architectural Recommendation
-We implement a **Clean Provider Interface** (`LLMProvider`) supporting all three options:
-1. **MockProvider (Default):** Used for automated tests, CI, and zero-network environments. Guarantees 100% offline, reproducible testing with no external dependencies.
-2. **OllamaProvider (Recommended for Local Privacy):** Uses the existing local Ollama installation (`http://127.0.0.1:11434`) with `llama3.2:latest` without downloading any new models or incurring costs.
-3. **APIProvider (Recommended for Highest Instruction Quality):** Supports any OpenAI-compatible cloud endpoint via `LLM_API_KEY` without hardcoding credentials or provider-specific SDKs.
-
----
-
-## 4. Project Directory Structure
+## 3. Project Directory Structure
 
 ```text
 ai project/
 ├── .env.example                        # Template for environment configuration
-├── .gitignore                          # Excludes .env, .venv, and local caches
+├── .gitignore                          # Excludes .env, .venv, local vector store, and caches
+├── app.py                              # Phase 5: Streamlit user-facing application
+├── DATASET_REPORT.md                   # Completed Phase 1 dataset report
+├── README.md                           # This documentation
+├── requirements.txt                    # Pinned package dependencies (including streamlit)
 ├── data/
 │   ├── sample/                         # Validated source samples from Phase 1
 │   │   ├── rag_knowledge_sample_30.jsonl
@@ -111,7 +92,7 @@ ai project/
 │   ├── processed/                      # Output from reproducible ingestion
 │   │   ├── knowledge_base.jsonl        # Cleaned, standardized knowledge chunks
 │   │   └── ingestion_report.json       # Ingestion audit and rejection metrics
-│   └── vector_store/                   # Persistent local ChromaDB storage
+│   └── vector_store/                   # Persistent local ChromaDB storage (git-ignored)
 ├── src/
 │   ├── __init__.py
 │   ├── config.py                       # Central paths, provider configs, and safety rules
@@ -126,198 +107,159 @@ ai project/
 │   ├── guard/
 │   │   ├── query_guard.py              # Pre-retrieval query classifier (GuardAction)
 │   │   └── relevance_gate.py           # Post-retrieval threshold gate (GateVerdict)
-│   └── generation/
+│   ├── generation/
+│   │   ├── __init__.py
+│   │   ├── providers.py                # LLMProvider abstraction (Mock, Ollama, API)
+│   │   ├── answer_gen.py               # Grounded answer generator with LLM prompt
+│   │   └── verifier.py                 # Post-generation structural safety verifier
+│   └── ui/
 │       ├── __init__.py
-│       ├── providers.py                # LLMProvider abstraction (Mock, Ollama, API)
-│       ├── answer_gen.py               # Grounded answer generator with LLM prompt
-│       └── verifier.py                 # Post-generation structural safety verifier
+│       └── helpers.py                  # Diagnostic extraction & Ollama health check helpers
 ├── scripts/
 │   ├── build_index.py                  # CLI script to embed and index chunks
 │   ├── query_retrieval.py              # CLI tester for farmer questions
 │   └── demo_guard.py                   # CLI demo showing safety scenarios & providers
-├── tests/
-│   ├── __init__.py
-│   ├── test_retrieval_baseline.py      # 5 Phase 2 diagnostic retrieval baseline tests
-│   ├── test_hallucination_guard.py     # 14 Phase 3 guard & pipeline tests
-│   └── test_generation_providers.py    # 16 Phase 4 provider & grounding safety tests
-├── DATASET_REPORT.md                   # Completed Phase 1 dataset report
-├── requirements.txt                    # Pinned package dependencies
-└── README.md                           # This documentation
+└── tests/
+    ├── __init__.py
+    ├── test_retrieval_baseline.py      # 5 Phase 2 diagnostic retrieval baseline tests
+    ├── test_hallucination_guard.py     # 14 Phase 3 guard & pipeline tests
+    ├── test_generation_providers.py    # 16 Phase 4 provider & grounding safety tests
+    └── test_ui_pipeline.py             # 10 Phase 5 UI helpers & failure-case integration tests
 ```
 
 ---
 
-## 5. Setup & Configuration (Windows PowerShell)
+## 4. Setup & Launch Instructions (Windows PowerShell)
 
 Open **Windows PowerShell** in the project directory: `c:\Users\parth\Desktop\ai project`.
 
 ### Step 1: Environment Setup
 ```powershell
-# Create virtual environment if not already present
-python -m venv .venv
+# 1. Activate the virtual environment
 .\.venv\Scripts\Activate.ps1
 
-# Install project dependencies
+# 2. Install all required dependencies (including Streamlit)
 .\.venv\Scripts\pip.exe install -r requirements.txt
 ```
 
-### Step 2: Configure LLM Provider
-Copy `.env.example` to `.env`:
+### Step 2: Knowledge Base Ingestion & Vector Index Preparation
+Prepare the clean knowledge chunks and persistent ChromaDB index (one-time setup):
 ```powershell
-Copy-Item .env.example .env
-```
-
-Edit `.env` to select your provider:
-
-#### Option A: Offline Mock (Default — No setup, no network)
-```env
-LLM_PROVIDER=mock
-```
-
-#### Option B: Local Ollama (100% Private, Zero Cost)
-```env
-LLM_PROVIDER=ollama
-OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=llama3.2:latest
-OLLAMA_TIMEOUT=30.0
-```
-*Note: Verify that Ollama is running by opening the Ollama desktop app or running `ollama list`.*
-
-#### Option C: Cloud API (OpenAI-compatible)
-```env
-LLM_PROVIDER=api
-LLM_API_KEY=sk-your-actual-api-key-here
-LLM_API_BASE=https://api.openai.com/v1
-LLM_MODEL=gpt-4o-mini
-LLM_TIMEOUT=30.0
-```
-*Security notice: Never commit `.env` to version control. Keys are never logged.*
-
----
-
-## 6. Execution Workflow
-
-### Step 3: Run Ingestion and Vector Indexing (One-Time Setup)
-```powershell
-# 1. Ingest raw samples and filter out corrupted records
+# 1. Run reproducible ingestion & quality filtering
 .\.venv\Scripts\python.exe -m src.ingestion.ingest
 
 # 2. Build local ChromaDB vector store
 .\.venv\Scripts\python.exe scripts/build_index.py --reset
 ```
 
-### Step 4: Run the Interactive Demo
-Run the 4 safety scenarios using the default mock provider:
-```powershell
-.\.venv\Scripts\python.exe scripts/demo_guard.py
-```
+### Step 3: Local Ollama Requirements
+The application integrates with the local Ollama runtime on Windows (`http://127.0.0.1:11434`):
+- Ensure Ollama is running in your taskbar, or launch it via Windows Start Menu.
+- Model: `llama3.2:latest` (already present locally).
+- If Ollama is offline or times out, the application automatically falls back to the deterministic safe template without throwing unhandled exceptions.
 
-Run with local Ollama:
+### Step 4: Launch the User-Facing Streamlit Application
+Execute the following command in PowerShell:
 ```powershell
-.\.venv\Scripts\python.exe scripts/demo_guard.py --provider ollama
+.\.venv\Scripts\streamlit.exe run app.py
 ```
-
-Run with live ChromaDB retrieval:
-```powershell
-.\.venv\Scripts\python.exe scripts/demo_guard.py --live --provider mock
-```
+Streamlit will launch locally in your browser at `http://localhost:8501`.
 
 ---
 
-## 7. Automated Test Suite Results
+## 5. User Interface Features & Academic Evaluation Guide
 
-The project includes 35 comprehensive automated unit tests covering all safety and generation stages. All tests run offline using mocks without external network calls.
+The Streamlit interface (`app.py`) provides an interactive testbed designed for academic presentations:
+
+1. **System & Model Status Sidebar:**
+   - Real-time Ollama connectivity indicator and model discovery.
+   - Vector store index health check (confirms active ChromaDB storage).
+   - Display of calibrated relevance gate thresholds (`Sufficient ≥ 0.50`, `Min Viable ≥ 0.30`).
+   - Active provider selector (`ollama`, `mock`, `api`).
+2. **Farmer Query Console & Quick Benchmark Buttons:**
+   - Text input for custom natural language queries.
+   - 5 Quick-Load benchmark buttons matching scientific evaluation scenarios:
+     - 🌾 **Paddy Stem Borer Control** (Normal in-domain query → answered with evidence).
+     - ❓ **Ambiguous Symptoms (No Crop)** (Triggers pre-retrieval crop clarification).
+     - 🌦️ **Weather & PM Kisan Inquiry** (Triggers dynamic abstention with official portal links).
+     - 💻 **React/Node.js Question** (Triggers off-topic safe abstention).
+     - 🌾 **Dragon Fruit Winter Grafting** (Unindexed crop → rejected by Relevance Gate).
+3. **Live Pipeline Execution Trace:**
+   - Visual breadcrumb pills showing the exact sequence of stages traversed for the query.
+4. **Structured Advisory Result Card:**
+   - Color-coded status banners distinguishing confident answers, low-confidence warnings, and safe abstentions.
+   - Grounded advisory text citing specific KCC Record IDs.
+   - Prominent uncertainty notices whenever evidence relevance is marginal.
+5. **Interactive Diagnostic Tabs:**
+   - **📚 Supporting Evidence Chunks:** Expandable cards showing Chunk ID, Clean Crop, Location, Year, Cosine Similarity Score, and verbatim KCC Transcripts.
+   - **🛡️ Five-Stage Guard Diagnostics:** Detailed metrics for QueryGuard, RelevanceGate, AnswerGenerator, and PostGenerationVerifier. Any bypassed stage displays `Stage not executed (safely bypassed)`.
+   - **📜 Raw Trace & JSON:** Full plain-text trace from `to_display_text()` and raw JSON diagnostics for evaluators.
+
+---
+
+## 6. Automated Test Suite Results
+
+The project includes **45 comprehensive automated unit and integration tests** covering all phases. All tests run offline without network access or live API keys.
 
 ### Run All Tests:
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-### Test Suite Breakdown:
+### Complete Test Results:
+```text
+Ran 45 tests in 3.554s
 
-| Test Module | Tests | Scenarios Tested | Status |
+OK
+```
+
+### Test Breakdown by Phase:
+
+| Test Module | Tests | Focus Areas | Status |
 | :--- | :---: | :--- | :---: |
-| `tests.test_retrieval_baseline` | 5 | Normal in-domain, out-of-domain nearest neighbor, unindexed crop, time-sensitive queries, ambiguous queries | ✅ 5/5 PASS |
-| `tests.test_hallucination_guard` | 14 | Pre-retrieval QueryGuard, RelevanceGate thresholds, crop mismatch detection, dynamic abstention, structural verifier | ✅ 14/14 PASS |
-| `tests.test_generation_providers` | 16 | MockProvider, OllamaProvider, APIProvider, missing API keys, timeout handling, graceful fallback, grounded citations, ungrounded chemical rejection | ✅ 16/16 PASS |
-| **Total** | **35** | **Complete end-to-end safety & generation verification** | **✅ 35/35 PASS** |
+| `tests.test_retrieval_baseline` | 5 | In-domain retrieval, forced nearest-neighbor baseline, unindexed crops, dynamic query hazards, ambiguity hazards | ✅ 5/5 PASS |
+| `tests.test_hallucination_guard` | 14 | Pre-retrieval QueryGuard, calibrated relevance gate, crop mismatch detection, dynamic abstention, structural verifier | ✅ 14/14 PASS |
+| `tests.test_generation_providers` | 16 | MockProvider, OllamaProvider, APIProvider, configuration security, timeout handling, graceful fallback, ungrounded chemical rejection | ✅ 16/16 PASS |
+| `tests.test_ui_pipeline` | 10 | Ollama service health check, genuine diagnostic extraction, bypassed stage handling, UI integration across all 5 evaluation scenarios | ✅ 10/10 PASS |
+| **Total** | **45** | **Complete end-to-end safety, generation, and UI verification** | **✅ 45/45 PASS** |
 
 ---
 
-## 8. Examples of Pipeline Decisions
+## 7. Examples of Pipeline Decisions in the UI
 
-### Example 1: Grounded Advisory Response (Supported Query)
-- **Input Query:** *"How do I control stem borer in my paddy crop?"*
-- **Pipeline Stage:** `QueryGuard -> Retrieval -> RelevanceGate -> Generation -> Verification`
-- **Gate Verdict:** `EVIDENCE_SUFFICIENT` (Score: 0.6500)
-- **Generation Output:**
-  ```text
-  ADVISORY RESPONSE (Evidence-Grounded)
-  ----------------------------------------------------------------------
-  Based on historical Kisan Call Centre (KCC) records, here is the available advisory evidence:
-  For stem borer (Scirpophaga incertulas) in paddy, apply chlorpyrifos 2 ml/litre of water by foliar spray...
-  
-  EVIDENCE SOURCES:
-    [1] Record ID: kcc_chunk_demo_001 | Similarity: 0.6500
-    Crops in evidence: Paddy (Dhan)
-    Attribution: Kisan Call Centre (KCC) Transcripts, Ministry of Agriculture & Farmers Welfare, GoI.
-  
-  NOTICE: This document contains historical Kisan Call Centre advisory evidence.
-  It is NOT verified current legal or agronomic advice. Chemical dosages must be independently
-  verified with local agricultural extension officers (KVK / SAU).
-  ```
+### 1. In-Domain Supported Question
+- **Query:** *"How do I control stem borer in my paddy crop?"*
+- **UI Output:**
+  - Status: `SUCCESS (Evidence-Grounded)`
+  - Stages: `Stage 1: QueryGuard ➔ Stage 2: Retrieval ➔ Stage 3: Relevance Gate ➔ Stage 4: Grounded Generation ➔ Stage 5: Post-Verifier`
+  - Cited Evidence: `kcc_chunk_kcc_00563633` (Score: `0.6500`)
+  - Grounded text with regulatory disclaimer and attribution.
 
-### Example 2: Non-Agricultural Query (Pre-Retrieval Safe Abstention)
-- **Input Query:** *"How do I configure a React frontend router in Node.js?"*
-- **Pipeline Stage:** `QueryGuard -> Abstained(OffTopic)`
-- **Retrieval & LLM Calls:** **0 (Intercepted before any vector search)**
-- **Response:**
-  ```text
-  UNABLE TO ANSWER: Query Not Related to Agriculture
-  Reason: I am an agronomy advisory assistant specializing in crop management, pest control,
-  nutrient management, and farming practices. Your question does not appear to be related to agriculture.
-  ```
+### 2. Missing Crop Name (Clarification Requested)
+- **Query:** *"My plants have yellow spots and the leaves are curling. What spray should I use?"*
+- **UI Output:**
+  - Status: `CROP / SYMPTOM CLARIFICATION REQUIRED`
+  - Stages: `Stage 1: QueryGuard ➔ Clarification Needed`
+  - Prompt shown: *"Which crop is affected? (e.g. paddy, wheat, tomato)..."*
+  - Vector retrieval and LLM generation: **0 calls (Safely bypassed)**.
 
-### Example 3: Ambiguous Query Without Crop Name (Clarification Requested)
-- **Input Query:** *"My plants have yellow spots and the leaves are curling. What spray should I use?"*
-- **Pipeline Stage:** `QueryGuard -> Clarification(Requested)`
-- **Response:**
-  ```text
-  To give you accurate advice, could you please tell me:
-  1. Which crop is affected? (e.g., paddy, wheat, tomato)
-  2. What symptoms do you see? (e.g., yellow spots, wilting, holes in leaves)
-  Different crops require different treatments, and prescribing chemicals without knowing the crop could cause harm.
-  ```
+### 3. Dynamic Weather Query (Safe Abstention)
+- **Query:** *"Will it rain tomorrow in Mehsana, Gujarat? Also when is the PM Kisan installment date?"*
+- **UI Output:**
+  - Status: `REAL-TIME DATA REQUIRED (Safe Abstention)`
+  - Stages: `Stage 1: QueryGuard ➔ Abstained (Real-Time)`
+  - Directs farmer to official live portals: `imd.gov.in`, `agmarknet.gov.in`, `pmkisan.gov.in`.
 
-### Example 4: Real-Time / Weather Query (Safe Abstention with Referral)
-- **Input Query:** *"Will it rain tomorrow in Mehsana, Gujarat? Also when is the PM Kisan installment date?"*
-- **Pipeline Stage:** `QueryGuard -> Abstained(Dynamic)`
-- **Response:**
-  ```text
-  UNABLE TO ANSWER: Real-Time Data Required
-  Reason: This query requires real-time information (weather forecasts, current market prices,
-  or government scheme deadlines) that this system does not have access to. Please check:
-  • Weather: India Meteorological Department (imd.gov.in)
-  • Market prices: Agmarknet (agmarknet.gov.in)
-  • PM Kisan: pmkisan.gov.in
-  ```
+### 4. Off-Topic Technical Query
+- **Query:** *"How do I configure a React frontend router in Node.js?"*
+- **UI Output:**
+  - Status: `QUERY NOT RELATED TO AGRICULTURE (Safe Abstention)`
+  - Stages: `Stage 1: QueryGuard ➔ Abstained (Off-Topic)`
+  - Explains assistant's agricultural scope.
 
-### Example 5: Crop Mismatch (Post-Retrieval Relevance Gate Block)
-- **Input Query:** *"How to treat rust disease in wheat?"* (Retrieved chunk: *Paddy stem borer*)
-- **Gate Verdict:** `CROP_MISMATCH`
-- **Action:** Generation blocked; no cross-crop chemical advice is presented.
-
-### Example 6: Fabricated Chemical Claim (Post-Generation Verifier Block)
-- **Generated Text Claim:** *"Apply chlorpyrifos 5 ml/litre for rust control."*
-- **Evidence Chunks:** Contain only *tebuconazole 1 ml/litre*.
-- **Verifier Action:** `BLOCKED_HALLUCINATION`
-- **Output:** The answer text is stripped, and the response is safely converted to an abstention citing `HALLUCINATION_RISK`.
-
----
-
-## 9. Remaining Risks & Phase 5 Roadmap
-
-1. **Agronomic Validity of Historical Records:** Historical KCC advice (2014–2024) may contain chemicals that are now banned or restricted by the Central Insecticides Board & Registration Committee (CIB&RC).
-2. **Local Dialect Translation Nuances:** Hindi and regional language queries often use colloquial terms for pests and diseases (e.g., *sundi*, *mahla*, *geedan*). Multilingual embeddings and local dialect normalization are required.
-3. **Natural Language Entailment (NLI):** The current verifier uses regex-based chemical and dosage matching. Integrating a formal NLI cross-encoder will provide deeper semantic entailment checks.
-4. **Interactive Chatbot Interface:** Phase 5 will implement a Streamlit chatbot UI supporting multi-turn dialogues, clarification workflows, and evidence inspection panels.
+### 5. Fabricated Chemical Claim Blocked
+- **Trigger:** Generated text recommends an active ingredient or dosage not found in retrieved chunks.
+- **UI Output:**
+  - Status: `BLOCKED BY SAFETY VERIFIER: Ungrounded Claims Detected`
+  - Verifier Verdict: `BLOCKED_HALLUCINATION`
+  - Response text is stripped to prevent farmer from acting on ungrounded chemical advice.
