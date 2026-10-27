@@ -242,7 +242,7 @@ OK
 ```powershell
 .\.venv\Scripts\python.exe scripts/evaluate_retrieval.py
 ```
-Detailed demonstration walk-throughs and scenario steps are available in [`DEMO_GUIDE.md`](file:///c:/Users/parth/Desktop/ai%20project/DEMO_GUIDE.md). Forensic audit and evaluation metrics are documented in [`BACKEND_AUDIT.md`](file:///c:/Users/parth/Desktop/ai%20project/BACKEND_AUDIT.md).
+Detailed demonstration walk-throughs and scenario steps are available in [`DEMO_GUIDE.md`](file:///c:/Users/parth/Desktop/ai%20project/DEMO_GUIDE.md). Comprehensive defense notes, presentation scripts, and 25 examiner viva Q&As are in [`VIVA_PREPARATION.md`](file:///c:/Users/parth/Desktop/ai%20project/VIVA_PREPARATION.md). Forensic audit and evaluation metrics are documented in [`BACKEND_AUDIT.md`](file:///c:/Users/parth/Desktop/ai%20project/BACKEND_AUDIT.md).
 
 ---
 
