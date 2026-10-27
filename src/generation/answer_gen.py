@@ -25,6 +25,7 @@ from src.generation.providers import (
     LLMProvider,
     MockProvider,
     LLMError,
+    LLMGenerationError,
     get_llm_provider,
 )
 

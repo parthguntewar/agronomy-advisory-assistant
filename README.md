@@ -20,6 +20,10 @@ This project builds a modular, safety-layered Retrieval-Augmented Generation (RA
 | **3** | Hallucination guard, relevance gating, and safe abstention pipeline | ✅ Done |
 | **4** | Clean LLM provider interface (Mock, Ollama, API) & grounded answer generation | ✅ Done |
 | **5** | User-facing Streamlit application with live pipeline diagnostics & evidence inspector | ✅ Done |
+| **6A** | Safety guard & verifier hardening (eliminated unverified weak bypass & unindexed crop leakage) | ✅ Done |
+| **6B** | Retrieval & relevance gate optimization (multi-chunk promotion, golden benchmark N=30) | ✅ Done |
+| **6C** | End-to-end safety & reliability hardening (citation checks, contradictory evidence, secret sanitization) | ✅ Done |
+| **7** | Final integration, runtime validation & demo readiness ([`DEMO_GUIDE.md`](file:///c:/Users/parth/Desktop/ai%20project/DEMO_GUIDE.md)) | ✅ Done |
 
 > **CRITICAL AGRONOMIC DISCLAIMER:**  
 > This project indexes historical Kisan Call Centre (KCC) records for research and evaluation. It **does NOT prescribe or automate agricultural chemical advice**. Historical recommendations (dating back to 2014–2024) may contain restricted chemicals, outdated formulations, or regional inaccuracies. All agrochemical decisions require field validation by qualified extension specialists (KVK / SAU) and inspection of active product labels.
@@ -207,7 +211,7 @@ The redesigned Streamlit interface (`app.py`) provides a professional, research-
 
 ## 6. Automated Test Suite Results
 
-The project includes **45 comprehensive automated unit and integration tests** covering all phases. All tests run offline without network access or live API keys.
+The project includes **71 comprehensive automated unit and integration tests** covering all phases. All tests run offline without network access or live API keys.
 
 ### Run All Tests:
 ```powershell
@@ -216,12 +220,12 @@ The project includes **45 comprehensive automated unit and integration tests** c
 
 ### Complete Test Results:
 ```text
-Ran 45 tests in 3.554s
+Ran 71 tests in 2.477s
 
 OK
 ```
 
-### Test Breakdown by Phase:
+### Test Breakdown by Module:
 
 | Test Module | Tests | Focus Areas | Status |
 | :--- | :---: | :--- | :---: |
@@ -229,7 +233,16 @@ OK
 | `tests.test_hallucination_guard` | 14 | Pre-retrieval QueryGuard, calibrated relevance gate, crop mismatch detection, dynamic abstention, structural verifier | ✅ 14/14 PASS |
 | `tests.test_generation_providers` | 16 | MockProvider, OllamaProvider, APIProvider, configuration security, timeout handling, graceful fallback, ungrounded chemical rejection | ✅ 16/16 PASS |
 | `tests.test_ui_pipeline` | 10 | Ollama service health check, genuine diagnostic extraction, bypassed stage handling, UI integration across all 5 evaluation scenarios | ✅ 10/10 PASS |
-| **Total** | **45** | **Complete end-to-end safety, generation, and UI verification** | **✅ 45/45 PASS** |
+| `tests.test_safety_hardening_regression` | 6 | Phase 6A: verifier weak-evidence verification, blind spot chemicals, unindexed crop rejection | ✅ 6/6 PASS |
+| `tests.test_retrieval_gate_optimization` | 7 | Phase 6B: multi-chunk promotion (Pomegranate/Guava), threshold validation, unindexed crop refusals | ✅ 7/7 PASS |
+| `tests.test_e2e_safety_hardening` | 13 | Phase 6C: citation validity, contradictory evidence warnings, secret redaction, empty text fail-safes | ✅ 13/13 PASS |
+| **Total** | **71** | **Complete end-to-end safety, generation, and UI verification** | **✅ 71/71 PASS** |
+
+### Run Golden Retrieval Benchmark Evaluation:
+```powershell
+.\.venv\Scripts\python.exe scripts/evaluate_retrieval.py
+```
+Detailed demonstration walk-throughs and scenario steps are available in [`DEMO_GUIDE.md`](file:///c:/Users/parth/Desktop/ai%20project/DEMO_GUIDE.md). Forensic audit and evaluation metrics are documented in [`BACKEND_AUDIT.md`](file:///c:/Users/parth/Desktop/ai%20project/BACKEND_AUDIT.md).
 
 ---
 
