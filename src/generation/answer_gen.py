@@ -13,6 +13,7 @@ This module provides a structured generation interface that:
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -207,6 +208,16 @@ class AnswerGenerator:
             or ([gate_result.best_chunk] if gate_result.best_chunk else [])
         )
 
+        if not evidence_chunks:
+            return GeneratedAnswer(
+                status=GenerationStatus.ABSTAINED_NO_EVIDENCE,
+                answer_text="",
+                abstention_reason=(
+                    gate_result.reason
+                    or "No approved crop-compatible evidence found to generate safe advice."
+                ),
+            )
+
         source_ids = [c.chunk_id for c in evidence_chunks]
         scores = [c.similarity_score for c in evidence_chunks]
         crops = [c.crop_clean for c in evidence_chunks]
@@ -217,6 +228,23 @@ class AnswerGenerator:
             chunks=evidence_chunks,
             is_weak=(verdict == GateVerdict.EVIDENCE_WEAK),
         )
+
+        # Fail safely if neither generation nor fallback produced substantive text
+        if not answer_text or not answer_text.strip():
+            return GeneratedAnswer(
+                status=GenerationStatus.ABSTAINED_NO_EVIDENCE,
+                answer_text="",
+                source_ids=source_ids,
+                evidence_scores=scores,
+                crops_cited=crops,
+                provider_used=provider_used,
+                is_fallback=is_fallback,
+                fallback_reason=fallback_reason,
+                abstention_reason=(
+                    f"Advisory generation failed safely. Provider: {provider_used}. "
+                    f"Details: {fallback_reason or 'empty generation output'}."
+                ),
+            )
 
         if verdict == GateVerdict.EVIDENCE_SUFFICIENT:
             return GeneratedAnswer(
@@ -276,30 +304,58 @@ class AnswerGenerator:
 
         try:
             text = self.provider.generate(prompt=prompt, system_prompt=SYSTEM_PROMPT)
+            if not text or not text.strip():
+                raise LLMGenerationError(f"Provider '{provider_name}' returned empty response text.")
             return text, False, provider_name, None
         except LLMError as e:
+            clean_err = self._sanitize_error(str(e))
             logger.warning(
                 f"[AnswerGenerator] LLM provider '{provider_name}' "
-                f"failed: {e}. Falling back to structured evidence template."
+                f"failed: {clean_err}. Falling back to structured evidence template."
             )
-            # Safe fallback to deterministic template
-            return (
-                self._format_evidence_answer(query, chunks),
-                True,
-                "deterministic_template_fallback",
-                f"LLMError in provider '{provider_name}': {str(e)}",
-            )
+            try:
+                fallback_text = self._format_evidence_answer(query, chunks)
+                return (
+                    fallback_text,
+                    True,
+                    "deterministic_template_fallback",
+                    f"LLMError in provider '{provider_name}': {clean_err}",
+                )
+            except Exception as fe:
+                return (
+                    "",
+                    True,
+                    "failed_fallback",
+                    f"Both provider and fallback failed: {clean_err} | {self._sanitize_error(str(fe))}",
+                )
         except Exception as e:
+            clean_err = self._sanitize_error(str(e))
             logger.error(
-                f"[AnswerGenerator] Unexpected failure in provider '{provider_name}': {e}. "
+                f"[AnswerGenerator] Unexpected failure in provider '{provider_name}': {clean_err}. "
                 "Falling back to structured evidence template."
             )
-            return (
-                self._format_evidence_answer(query, chunks),
-                True,
-                "deterministic_template_fallback",
-                f"Unexpected error in provider '{provider_name}': {str(e)}",
-            )
+            try:
+                fallback_text = self._format_evidence_answer(query, chunks)
+                return (
+                    fallback_text,
+                    True,
+                    "deterministic_template_fallback",
+                    f"Unexpected error in provider '{provider_name}': {clean_err}",
+                )
+            except Exception as fe:
+                return (
+                    "",
+                    True,
+                    "failed_fallback",
+                    f"Both provider and fallback failed: {clean_err} | {self._sanitize_error(str(fe))}",
+                )
+
+    @staticmethod
+    def _sanitize_error(err_str: str) -> str:
+        """Sanitizes potential API keys or authorization headers from error messages."""
+        redacted = re.sub(r"([sS][kK]-[A-Za-z0-9_\-\.]{8,})", "[REDACTED_API_KEY]", err_str)
+        redacted = re.sub(r"(Bearer\s+)[A-Za-z0-9_\-\.]{8,}", r"\1[REDACTED_TOKEN]", redacted, flags=re.I)
+        return redacted
 
     def _build_llm_prompt(
         self,

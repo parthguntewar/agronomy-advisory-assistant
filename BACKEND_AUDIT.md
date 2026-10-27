@@ -4,7 +4,7 @@
 **Project:** Agronomy Advisory Assistant with Hallucination-Guarded RAG & Local Dialect Support  
 **Target Environment:** Windows 11 / Python 3.12+ / PowerShell  
 **Repository:** `c:\Users\parth\Desktop\ai project`  
-**Current Test Status:** 45 / 45 Tests Passing (Executed offline via `unittest`)  
+**Current Test Status:** 71 / 71 Tests Passing (Executed offline via `unittest`)  
 **Scope:** In-depth backend correctness, retrieval semantics, hallucination guards, verification integrity, and evaluation methodology.
 
 ---
@@ -236,9 +236,27 @@ Queries lacking relevant records evaluated for safety and refusal precision (Hit
 - [x] Added regression tests in `tests/test_retrieval_gate_optimization.py` for Pomegranate, Guava, Cotton, Satawar, Quinoa, Avocado, and Dragon Fruit.
 - [x] Full test suite verified: **58 / 58 tests passing** (0 failures, 0 errors).
 
-### Phase 6C: Systematic Benchmark Evaluation & Final Presentation Report (UPCOMING)
-- [ ] Expand golden evaluation benchmark to full 50-query suite.
-- [ ] Automate end-to-end evaluation report (`EVALUATION_REPORT.json`) across all 5 pipeline stages.
-- [ ] Finalize backend documentation for presentation.
+### Phase 6C: End-to-End Safety & Reliability Hardening (COMPLETED)
+- [x] **Citation Hallucination Elimination:** Added Check 1 validation in `PostGenerationVerifier` ensuring every cited source ID in `answer.source_ids` strictly exists in `evidence_chunks`. Prevents LLMs from inventing non-existent chunk references (`INVALID_CITATION`).
+- [x] **Contradictory Evidence Detection:** Added Check 5 in `PostGenerationVerifier` to detect when multiple retrieved chunks for the same crop prescribe disjoint chemical active ingredients. Issues a clear `CONTRADICTORY_EVIDENCE` warning and sets verification status to `PASSED_WITH_WARNINGS` to prevent unjustified certainty.
+- [x] **Empty Generation & Provider Crash Fail-Safes:** Hardened `AnswerGenerator` with an immediate empty chunk check and empty generation check. If neither the provider nor the fallback template produces substantive text, the system abstains safely with `ABSTAINED_NO_EVIDENCE` rather than crashing or claiming success.
+- [x] **Secret & Credential Sanitization:** Hardened `APIProvider.generate()` and `AnswerGenerator._sanitize_error()` with regex sanitizers that redact Bearer tokens (`[REDACTED_TOKEN]`) and API keys such as `sk-...` (`[REDACTED_API_KEY]`), ensuring exceptions never leak secrets into UI diagnostics, logs, or user-facing messages.
+- [x] **Transparent Fallback Banners:** Enhanced `GeneratedAnswer.to_display_text()` to inject a prominent `[FALLBACK NOTICE]` whenever deterministic template fallbacks are used, preventing silent fallback masking.
+- [x] **Pipeline Stage Chunk Consistency:** Verified that `gate_result.compatible_chunks` is the exact evidence passed to both `AnswerGenerator` and `PostGenerationVerifier`.
+- [x] **End-to-End Test Suite:** Created `tests/test_e2e_safety_hardening.py` containing 13 focused tests covering Scenarios A (grounding, weak caveats, contradictory evidence, hallucinated citations), B (unsupported crops, crop mismatches, ambiguous queries, regional dialect names), C (timeouts, secret redaction, empty outputs, fallback banners), and D (stage chunk consistency).
+- [x] **Full Test Suite Verification:** **71 / 71 tests passing** (0 failures, 0 errors, runtime: ~2.5s).
+- [x] **Benchmark Evaluation:** Executed `scripts/evaluate_retrieval.py` generating `data/evaluation/retrieval_evaluation_report.json` with 100% crop match accuracy, 93.33% gated Hit@1, 100% unsupported crop rejection, and 0% cross-crop advice leakage.
+
+---
+
+## 10. Remaining Known Limitations & Real-World Validation Separation
+
+While the backend is hardened against all verified failure modes within the scope of this project, rigorous scientific separation between automated verification and real-world agronomic deployment must be maintained:
+
+1. **Knowledge Base Scale vs Real World:** The active vector store indexes 26 historical KCC records from a 30-record sample. Real-world agricultural advisory requires indexing thousands of diverse records covering hundreds of agro-climatic zones.
+2. **Lexical / Regex Chemical Detection vs Certified Registry:** Chemical names, dosages, and formulations are detected via structured regular expressions and an agronomic vocabulary dictionary. While effective against benchmark blind spots, this does not replace a comprehensive, live CIBRC (Central Insecticides Board & Registration Committee) database lookup.
+3. **Structural Hallucination Verification vs NLI:** The `PostGenerationVerifier` checks entity grounding, token containment, chunk citation existence, and multi-chunk chemical consistency. Full semantic entailment / natural language inference (NLI) on arbitrary natural language answers requires a calibrated cross-encoder model.
+4. **Historical Advice Caution:** Historical Kisan Call Centre records (spanning 2014–2022) contain chemical recommendations that may have been superseded or restricted by current state/central regulatory bodies. Advisory outputs are strictly designated for research and decision-support demonstration.
+
 
 

@@ -250,21 +250,24 @@ class APIProvider(LLMProvider):
             if not content:
                 raise LLMGenerationError("API returned empty message content.")
             return content
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
             raise LLMGenerationError(
-                f"Cannot connect to API endpoint at {self.base_url}: {e}"
-            ) from e
-        except requests.exceptions.Timeout as e:
+                f"Cannot connect to API endpoint at {self.base_url}."
+            ) from None
+        except requests.exceptions.Timeout:
             raise LLMGenerationError(
                 f"API request timed out after {self.timeout}s (model={self.model})."
-            ) from e
+            ) from None
         except requests.exceptions.HTTPError as e:
             status = e.response.status_code if e.response is not None else "unknown"
             raise LLMGenerationError(
                 f"API provider HTTP error {status}."
-            ) from e
+            ) from None
         except Exception as e:
-            raise LLMGenerationError(f"Unexpected API provider failure: {e}") from e
+            err_msg = str(e)
+            if self.api_key and self.api_key in err_msg:
+                err_msg = err_msg.replace(self.api_key, "[REDACTED_API_KEY]")
+            raise LLMGenerationError(f"Unexpected API provider failure: {err_msg}") from None
 
 
 def get_llm_provider(provider_type: Optional[str] = None) -> LLMProvider:

@@ -149,12 +149,24 @@ class PostGenerationVerifier:
                 "Local expert validation (KVK/SAU) is required before implementing any advice."
             )
 
-        # ── Check 1: Source citation completeness ─────────────────────────
+        # ── Check 0: Answer text presence ─────────────────────────────────
+        if not answer.answer_text or not answer.answer_text.strip():
+            issues.append("EMPTY_ANSWER: Generated advisory answer text is empty.")
+
+        # ── Check 1: Source citation completeness and validity ─────────────
         if not answer.source_ids:
             issues.append(
                 "CITATION_MISSING: Answer has no source record IDs. "
                 "Every substantive advisory answer must cite at least one KCC record."
             )
+        else:
+            valid_chunk_ids = {c.chunk_id for c in evidence_chunks}
+            invalid_citations = [sid for sid in answer.source_ids if sid not in valid_chunk_ids]
+            if invalid_citations:
+                issues.append(
+                    f"INVALID_CITATION: Answer cites record IDs {invalid_citations} "
+                    "that were not approved or present in retrieved evidence chunks."
+                )
 
         # ── Check 2: Safety notice presence ───────────────────────────────
         if answer.safety_notice and len(answer.safety_notice) < 20:
@@ -196,6 +208,25 @@ class PostGenerationVerifier:
                 f"CROP_CONSISTENCY: Answer cites crops {extra_crops} "
                 f"not present in retrieved evidence. Possible template error."
             )
+
+        # ── Check 5: Contradictory evidence across chunks ──────────────────
+        if len(evidence_chunks) >= 2:
+            chemicals_per_chunk = []
+            for c in evidence_chunks:
+                c_text = (c.expert_advisory + " " + c.farmer_query).lower()
+                c_chems = set()
+                for pat in _CHEMICAL_PATTERNS:
+                    for m in pat.finditer(c_text):
+                        c_chems.add(m.group(0).lower().strip())
+                if c_chems:
+                    chemicals_per_chunk.append(c_chems)
+            if len(chemicals_per_chunk) >= 2:
+                common = set.intersection(*chemicals_per_chunk)
+                if not common:
+                    warnings.append(
+                        "CONTRADICTORY_EVIDENCE: Supporting records prescribe differing chemical active ingredients. "
+                        "Farmer must consult local extension officers before selecting an option."
+                    )
 
         # ── Final verdict ─────────────────────────────────────────────────
         if issues:
