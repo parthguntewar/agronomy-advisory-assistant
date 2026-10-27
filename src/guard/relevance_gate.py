@@ -60,6 +60,7 @@ class GateResult:
     best_score: float
     best_chunk: Optional[RetrievalResult]
     sufficient_chunks: List[RetrievalResult] = field(default_factory=list)
+    compatible_chunks: List[RetrievalResult] = field(default_factory=list)
     all_chunks: List[RetrievalResult] = field(default_factory=list)
     detected_query_crop: Optional[str] = None
     crop_mismatch_detail: Optional[str] = None
@@ -127,6 +128,8 @@ class RelevanceGate:
                 verdict=GateVerdict.EVIDENCE_ABSENT,
                 best_score=best_raw_score,
                 best_chunk=best_raw,
+                sufficient_chunks=[],
+                compatible_chunks=[],
                 all_chunks=results,
                 detected_query_crop=query_crop,
                 reason=(
@@ -137,6 +140,7 @@ class RelevanceGate:
             )
 
         # ── Gate 2: Multi-chunk Crop compatibility check ─────────────────
+        promoted_rank_note = ""
         if query_crop is not None:
             # Look for any chunk that is crop-compatible with query_crop
             crop_compatible = [
@@ -152,18 +156,27 @@ class RelevanceGate:
                     verdict=GateVerdict.CROP_MISMATCH,
                     best_score=best_raw_score,
                     best_chunk=best_raw,
+                    sufficient_chunks=[],
+                    compatible_chunks=[],
                     all_chunks=results,
                     detected_query_crop=query_crop,
                     crop_mismatch_detail=mismatch_desc,
                     reason=(
-                        f"Query crop '{query_crop}' does not match retrieved crop "
-                        f"'{best_raw.crop_clean}'. Providing this evidence could result "
-                        "in incorrect crop-specific chemical advice."
+                        f"Query crop '{query_crop}' does not match any retrieved chunk "
+                        f"(top match was '{best_raw.crop_clean}' with score {best_raw_score:.4f}). "
+                        "Providing cross-crop evidence could result in dangerous chemical misapplication."
                     ),
                 )
             # Prioritize the best crop-compatible chunk
             best = crop_compatible[0]
             candidate_chunks = crop_compatible
+            if best.chunk_id != best_raw.chunk_id:
+                orig_rank = results.index(best) + 1
+                promoted_rank_note = (
+                    f" [Promoted compatible crop '{best.crop_clean}' from rank {orig_rank} "
+                    f"(score {best.similarity_score:.4f}) over incompatible rank 1 '{best_raw.crop_clean}' "
+                    f"(score {best_raw_score:.4f})]"
+                )
         else:
             # QueryGuard did not detect a crop name: check if retrieved chunks are mentioned
             crop_mentioned = [
@@ -173,12 +186,20 @@ class RelevanceGate:
             if crop_mentioned:
                 best = crop_mentioned[0]
                 candidate_chunks = crop_mentioned
+                if best.chunk_id != best_raw.chunk_id:
+                    orig_rank = results.index(best) + 1
+                    promoted_rank_note = (
+                        f" [Promoted mentioned crop '{best.crop_clean}' from rank {orig_rank} "
+                        f"(score {best.similarity_score:.4f}) over unmentioned rank 1 '{best_raw.crop_clean}']"
+                    )
             elif self._has_advisory_intent(query):
                 # Query has specific agronomic intent but unindexed/unmentioned crop evidence was retrieved
                 return GateResult(
                     verdict=GateVerdict.CROP_MISMATCH,
                     best_score=best_raw_score,
                     best_chunk=best_raw,
+                    sufficient_chunks=[],
+                    compatible_chunks=[],
                     all_chunks=results,
                     detected_query_crop=None,
                     crop_mismatch_detail=(
@@ -203,12 +224,14 @@ class RelevanceGate:
                 verdict=GateVerdict.EVIDENCE_ABSENT,
                 best_score=best_score,
                 best_chunk=best,
+                sufficient_chunks=[],
+                compatible_chunks=[],
                 all_chunks=results,
                 detected_query_crop=query_crop,
                 reason=(
                     f"Best compatible similarity score ({best_score:.4f}) is below minimum viable "
                     f"threshold ({self.minimum_viable_threshold}). "
-                    "No sufficiently relevant evidence found for this query."
+                    f"No sufficiently relevant evidence found for this query.{promoted_rank_note}"
                 ),
             )
 
@@ -221,11 +244,12 @@ class RelevanceGate:
                 best_score=best_score,
                 best_chunk=best,
                 sufficient_chunks=sufficient,
+                compatible_chunks=candidate_chunks,
                 all_chunks=results,
                 detected_query_crop=query_crop,
                 reason=(
                     f"Found {len(sufficient)} chunk(s) exceeding sufficient threshold "
-                    f"({self.sufficient_threshold}). Best score: {best_score:.4f}."
+                    f"({self.sufficient_threshold}). Best score: {best_score:.4f}.{promoted_rank_note}"
                 ),
             )
         else:
@@ -235,21 +259,22 @@ class RelevanceGate:
                 best_score=best_score,
                 best_chunk=best,
                 sufficient_chunks=[],
+                compatible_chunks=candidate_chunks,
                 all_chunks=results,
                 detected_query_crop=query_crop,
                 reason=(
                     f"Best similarity score ({best_score:.4f}) is above minimum viable "
                     f"({self.minimum_viable_threshold}) but below sufficient threshold "
                     f"({self.sufficient_threshold}). Evidence will be presented with "
-                    "explicit uncertainty caveat."
+                    f"explicit uncertainty caveat.{promoted_rank_note}"
                 ),
             )
 
     ALIASES: dict = {
         "paddy": {"rice", "dhan"},
         "rice": {"paddy", "dhan"},
-        "maize": {"corn"},
-        "corn": {"maize"},
+        "maize": {"corn", "makka"},
+        "corn": {"maize", "makka"},
         "arhar": {"tur", "pigeon pea"},
         "tur": {"arhar", "pigeon pea"},
         "moong": {"green gram", "mung"},
@@ -261,6 +286,14 @@ class RelevanceGate:
         "chillies": {"chilli", "chili", "mirch"},
         "satawar": {"shatavari", "satavar"},
         "dragon fruit": {"pitaya", "pitahaya"},
+        "cotton": {"kapas"},
+        "kapas": {"cotton"},
+        "pomegranate": {"anaar", "anar", "dalimb"},
+        "guava": {"amrood", "amrud", "peru"},
+        "mustard": {"sarson", "rai", "toria"},
+        "tomato": {"tamatar"},
+        "brinjal": {"eggplant", "baingan", "aubergine"},
+        "wheat": {"gehun", "gehu"},
     }
 
     @classmethod

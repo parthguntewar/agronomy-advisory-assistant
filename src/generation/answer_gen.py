@@ -200,9 +200,12 @@ class AnswerGenerator:
             )
 
         # -- Approved evidence chunks for generation --
-        evidence_chunks = gate_result.sufficient_chunks or gate_result.all_chunks
-        if not evidence_chunks and gate_result.best_chunk:
-            evidence_chunks = [gate_result.best_chunk]
+        # Strictly use approved crop-compatible evidence; never include unrelated cross-crop chunks
+        evidence_chunks = (
+            gate_result.sufficient_chunks
+            or getattr(gate_result, "compatible_chunks", None)
+            or ([gate_result.best_chunk] if gate_result.best_chunk else [])
+        )
 
         source_ids = [c.chunk_id for c in evidence_chunks]
         scores = [c.similarity_score for c in evidence_chunks]

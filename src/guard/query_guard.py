@@ -30,16 +30,16 @@ from typing import Optional, List, Set
 # ---------------------------------------------------------------------------
 _AGRI_CROP_TERMS: Set[str] = {
     # Cereals
-    "paddy", "rice", "wheat", "maize", "corn", "jowar", "bajra", "ragi",
+    "paddy", "rice", "dhan", "wheat", "gehun", "gehu", "maize", "corn", "makka", "jowar", "bajra", "ragi",
     "sorghum", "barley", "millet",
     # Pulses
     "moong", "urad", "arhar", "tur", "pigeon pea", "chickpea", "chana",
     "lentil", "masur", "cowpea", "moth bean", "green gram", "black gram",
     # Oilseeds
-    "groundnut", "soybean", "mustard", "sunflower", "sesame", "linseed",
+    "groundnut", "soybean", "mustard", "sarson", "sunflower", "sesame", "linseed",
     "safflower", "castor", "rapeseed",
     # Vegetables & Fruits
-    "tomato", "potato", "onion", "brinjal", "eggplant", "cabbage",
+    "tomato", "tamatar", "potato", "aloo", "onion", "pyaz", "brinjal", "baingan", "eggplant", "cabbage",
     "cauliflower", "okra", "bhindi", "pea", "beans", "cucumber",
     "gourd", "pumpkin", "mango", "banana", "papaya", "guava", "pomegranate",
     "grapes", "orange", "lemon", "lime", "apple", "pear", "jackfruit",
@@ -47,7 +47,7 @@ _AGRI_CROP_TERMS: Set[str] = {
     "fig", "anjeer", "litchi", "lychee", "quinoa", "chia", "passion fruit",
     "custard apple", "sitaphal",
     # Cash & Commercial Crops
-    "cotton", "sugarcane", "jute", "tobacco", "hemp", "rubber",
+    "cotton", "kapas", "sugarcane", "ganna", "jute", "tobacco", "hemp", "rubber",
     # Spices, Herbs & Plantation
     "turmeric", "ginger", "cardamom", "pepper", "chilli", "coriander",
     "cumin", "fenugreek", "garlic", "tea", "coffee", "coconut", "oil palm",
@@ -316,8 +316,10 @@ class QueryGuard:
             "my", "the", "a", "an", "this", "that", "some", "any", "control", "treat",
             "treatment", "manage", "management", "best", "good", "organic", "chemical",
             "spray", "pesticide", "fertilizer", "insect", "insects", "pest", "pests",
-            "disease", "diseases", "fungus", "leaf", "leaves", "root", "roots", "field",
-            "crop", "plants", "trees", "farm", "farming", "cultivation", "seed", "seeds"
+            "worm", "worms", "kida", "kide", "disease", "diseases", "fungus", "leaf",
+            "leaves", "root", "roots", "field", "fields", "crop", "crops", "plants",
+            "trees", "farm", "farming", "cultivation", "seed", "seeds", "dawa",
+            "medicine", "in", "for", "on", "of", "about", "with", "from"
         }
 
         # 1. Direct multi-word and known crop checks first (longest match priority)
@@ -335,6 +337,11 @@ class QueryGuard:
                 if groups:
                     candidate = groups[-1].strip()
                     cand_clean = candidate.lower()
-                    if cand_clean not in CROP_STOPWORDS and len(cand_clean) >= 3:
+                    cand_tokens = cand_clean.split()
+                    if (
+                        cand_clean not in CROP_STOPWORDS
+                        and not any(t in CROP_STOPWORDS for t in cand_tokens)
+                        and len(cand_clean) >= 3
+                    ):
                         return candidate.title()
         return None

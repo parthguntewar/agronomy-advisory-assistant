@@ -1,0 +1,756 @@
+{
+  "retrieval_evaluation_metadata": {
+    "total_benchmark_queries": 30,
+    "ground_truth_labeled_queries": 15,
+    "unsupported_crop_queries": 4,
+    "crop_mismatch_queries": 3,
+    "ambiguous_queries": 4,
+    "non_agri_queries": 4,
+    "top_k": 3
+  },
+  "ground_truth_retrieval_metrics": {
+    "raw_hit_at_1": 73.33,
+    "raw_hit_at_3": 100.0,
+    "raw_mrr": 0.8444,
+    "gated_hit_at_1": 93.33,
+    "gated_hit_at_3": 100.0,
+    "gated_mrr": 0.9667,
+    "crop_match_accuracy": 100.0,
+    "mrr_lift_from_gating": 0.1222
+  },
+  "safety_guard_abstention_metrics": {
+    "unsupported_crop_rejection_rate": 100.0,
+    "unsupported_crop_cross_crop_leakage_rate": 0.0,
+    "crop_mismatch_blocking_rate": 100.0,
+    "ambiguous_query_clarification_accuracy": 75.0,
+    "non_agricultural_abstention_accuracy": 75.0
+  },
+  "similarity_score_distributions": {
+    "in_domain_target_chunk": {
+      "count": 15,
+      "mean": 0.5623,
+      "min": 0.3542,
+      "max": 0.7582
+    },
+    "unsupported_crop_nearest_neighbor": {
+      "count": 4,
+      "mean": 0.3981,
+      "min": 0.2997,
+      "max": 0.4653
+    },
+    "crop_mismatch_nearest_neighbor": {
+      "count": 3,
+      "mean": 0.3825,
+      "min": 0.3635,
+      "max": 0.418
+    },
+    "offtopic_nearest_neighbor": {
+      "count": 4,
+      "mean": 0.2061,
+      "min": 0.0633,
+      "max": 0.3416
+    }
+  },
+  "query_execution_details": [
+    {
+      "query_id": "eval_01",
+      "query": "Insect Control in Satawar crop?",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Satawar",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.675,
+        0.5353,
+        0.5294
+      ],
+      "raw_top_crops": [
+        "Satawar",
+        "Groundnut (pea nut/mung phalli)",
+        "Green Gram (Moong Bean/ Moong)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00563633",
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00456483"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.675,
+      "gate_best_crop": "Satawar",
+      "gate_best_id": "kcc_chunk_kcc_00563633",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_02",
+      "query": "How to control neck blast disease in paddy crop?",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Paddy",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.6781,
+        0.5042,
+        0.491
+      ],
+      "raw_top_crops": [
+        "Paddy (Dhan)",
+        "Paddy (Dhan)",
+        "Paddy (Dhan)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00191125",
+        "kcc_chunk_kcc_00313852",
+        "kcc_chunk_kcc_00349222"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.6781,
+      "gate_best_crop": "Paddy (Dhan)",
+      "gate_best_id": "kcc_chunk_kcc_00191125",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_03",
+      "query": "What to apply for paddy nursery gallmidge damage?",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Paddy",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.5898,
+        0.5008,
+        0.467
+      ],
+      "raw_top_crops": [
+        "Paddy (Dhan)",
+        "Paddy (Dhan)",
+        "Paddy (Dhan)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00313852",
+        "kcc_chunk_kcc_00191125",
+        "kcc_chunk_kcc_00269397"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.5898,
+      "gate_best_crop": "Paddy (Dhan)",
+      "gate_best_id": "kcc_chunk_kcc_00313852",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_04",
+      "query": "Tomato blight disease control and recommended spray",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Tomato",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.5877,
+        0.4684,
+        0.4272
+      ],
+      "raw_top_crops": [
+        "Tomato",
+        "Bhindi(Okra/Ladysfinger)",
+        "Satawar"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00027200",
+        "kcc_chunk_kcc_00043945",
+        "kcc_chunk_kcc_00563633"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.5877,
+      "gate_best_crop": "Tomato",
+      "gate_best_id": "kcc_chunk_kcc_00027200",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_05",
+      "query": "What fertilizer spray is recommended for better growth of bhindi plant?",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Bhindi",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.7385,
+        0.606,
+        0.4892
+      ],
+      "raw_top_crops": [
+        "Bhindi(Okra/Ladysfinger)",
+        "Bhindi(Okra/Ladysfinger)",
+        "Tomato"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00109950",
+        "kcc_chunk_kcc_00043945",
+        "kcc_chunk_kcc_00027200"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.7385,
+      "gate_best_crop": "Bhindi(Okra/Ladysfinger)",
+      "gate_best_id": "kcc_chunk_kcc_00109950",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_06",
+      "query": "Information about late sowing mustard variety",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Mustard",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.7102,
+        0.4394,
+        0.3922
+      ],
+      "raw_top_crops": [
+        "Mustard",
+        "Tomato",
+        "Ber"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00096704",
+        "kcc_chunk_kcc_00594961",
+        "kcc_chunk_kcc_00121371"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.7102,
+      "gate_best_crop": "Mustard",
+      "gate_best_id": "kcc_chunk_kcc_00096704",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_07",
+      "query": "Asked about Guava Nematode management in soil",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Guava",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.7582,
+        0.4578,
+        0.4342
+      ],
+      "raw_top_crops": [
+        "Guava",
+        "Groundnut (pea nut/mung phalli)",
+        "Chillies"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00507570",
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00510007"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.7582,
+      "gate_best_crop": "Guava",
+      "gate_best_id": "kcc_chunk_kcc_00507570",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_08",
+      "query": "Fruit Borer Attack in pomegranate crop",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Pomegranate",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.7012,
+        0.4,
+        0.3439
+      ],
+      "raw_top_crops": [
+        "Pomegranate",
+        "Groundnut (pea nut/mung phalli)",
+        "Green Gram (Moong Bean/ Moong)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00386501",
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00456483"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.7012,
+      "gate_best_crop": "Pomegranate",
+      "gate_best_id": "kcc_chunk_kcc_00386501",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_09",
+      "query": "Fungus attack management in cotton crop",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Cotton",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.3542,
+        0.348,
+        0.3377
+      ],
+      "raw_top_crops": [
+        "Cotton (Kapas)",
+        "Groundnut (pea nut/mung phalli)",
+        "Paddy (Dhan)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00244824",
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00191125"
+      ],
+      "gate_verdict": "evidence_weak",
+      "gate_best_score": 0.3542,
+      "gate_best_crop": "Cotton (Kapas)",
+      "gate_best_id": "kcc_chunk_kcc_00244824",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_10",
+      "query": "Plant protection and spray for tea leaves",
+      "category": "in_domain_direct",
+      "guard_action": "proceed",
+      "detected_crop": "Tea",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.5217,
+        0.4728,
+        0.4519
+      ],
+      "raw_top_crops": [
+        "Tea",
+        "Green Gram (Moong Bean/ Moong)",
+        "Tomato"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00271164",
+        "kcc_chunk_kcc_00456483",
+        "kcc_chunk_kcc_00027200"
+      ],
+      "gate_verdict": "evidence_sufficient",
+      "gate_best_score": 0.5217,
+      "gate_best_crop": "Tea",
+      "gate_best_id": "kcc_chunk_kcc_00271164",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_11",
+      "query": "Fertilizer recommendation for pomegranate trees",
+      "category": "in_domain_promoted",
+      "guard_action": "proceed",
+      "detected_crop": "Pomegranate",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.4908,
+        0.4743,
+        0.4293
+      ],
+      "raw_top_crops": [
+        "Green Gram (Moong Bean/ Moong)",
+        "Pomegranate",
+        "Turmeric"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00214169",
+        "kcc_chunk_kcc_00386501",
+        "kcc_chunk_kcc_00317943"
+      ],
+      "gate_verdict": "evidence_weak",
+      "gate_best_score": 0.4743,
+      "gate_best_crop": "Pomegranate",
+      "gate_best_id": "kcc_chunk_kcc_00386501",
+      "promoted_rank": 2
+    },
+    {
+      "query_id": "eval_12",
+      "query": "Pest management for guava fruit fly",
+      "category": "in_domain_promoted",
+      "guard_action": "proceed",
+      "detected_crop": "Guava",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.4767,
+        0.436,
+        0.4262
+      ],
+      "raw_top_crops": [
+        "Groundnut (pea nut/mung phalli)",
+        "Pomegranate",
+        "Guava"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00386501",
+        "kcc_chunk_kcc_00507570"
+      ],
+      "gate_verdict": "evidence_weak",
+      "gate_best_score": 0.4262,
+      "gate_best_crop": "Guava",
+      "gate_best_id": "kcc_chunk_kcc_00507570",
+      "promoted_rank": 3
+    },
+    {
+      "query_id": "eval_13",
+      "query": "How to control sucking pests in cotton crop?",
+      "category": "in_domain_promoted",
+      "guard_action": "proceed",
+      "detected_crop": "Cotton",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.4028,
+        0.3876,
+        0.368
+      ],
+      "raw_top_crops": [
+        "Groundnut (pea nut/mung phalli)",
+        "Satawar",
+        "Cotton (Kapas)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00563633",
+        "kcc_chunk_kcc_00244824"
+      ],
+      "gate_verdict": "evidence_weak",
+      "gate_best_score": 0.368,
+      "gate_best_crop": "Cotton (Kapas)",
+      "gate_best_id": "kcc_chunk_kcc_00244824",
+      "promoted_rank": 3
+    },
+    {
+      "query_id": "eval_14",
+      "query": "What medicine to spray for worms in satawar roots and leaves?",
+      "category": "in_domain_promoted",
+      "guard_action": "proceed",
+      "detected_crop": "Satawar",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.4787,
+        0.4529,
+        0.397
+      ],
+      "raw_top_crops": [
+        "Satawar",
+        "Bhindi(Okra/Ladysfinger)",
+        "Tea"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00563633",
+        "kcc_chunk_kcc_00043945",
+        "kcc_chunk_kcc_00271164"
+      ],
+      "gate_verdict": "evidence_weak",
+      "gate_best_score": 0.4787,
+      "gate_best_crop": "Satawar",
+      "gate_best_id": "kcc_chunk_kcc_00563633",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_15",
+      "query": "Dhan ke khet me blast rog lag gaya hai kya spray kare?",
+      "category": "in_domain_promoted",
+      "guard_action": "proceed",
+      "detected_crop": "Dhan",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.3783,
+        0.372,
+        0.3693
+      ],
+      "raw_top_crops": [
+        "Paddy (Dhan)",
+        "Paddy (Dhan)",
+        "Satawar"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00313852",
+        "kcc_chunk_kcc_00191125",
+        "kcc_chunk_kcc_00563633"
+      ],
+      "gate_verdict": "evidence_weak",
+      "gate_best_score": 0.3783,
+      "gate_best_crop": "Paddy (Dhan)",
+      "gate_best_id": "kcc_chunk_kcc_00313852",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_16",
+      "query": "Quinoa downy mildew management practices",
+      "category": "unsupported_crop",
+      "guard_action": "proceed",
+      "detected_crop": "Quinoa",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.4653,
+        0.3109,
+        0.3094
+      ],
+      "raw_top_crops": [
+        "Groundnut (pea nut/mung phalli)",
+        "Chillies",
+        "Paddy (Dhan)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00510007",
+        "kcc_chunk_kcc_00191125"
+      ],
+      "gate_verdict": "crop_mismatch",
+      "gate_best_score": 0.4653,
+      "gate_best_crop": "Groundnut (pea nut/mung phalli)",
+      "gate_best_id": "kcc_chunk_kcc_00439293",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_17",
+      "query": "How to fertilize Hass avocado trees in sandy soil?",
+      "category": "unsupported_crop",
+      "guard_action": "proceed",
+      "detected_crop": "Avocado",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.4027,
+        0.366,
+        0.3608
+      ],
+      "raw_top_crops": [
+        "Turmeric",
+        "Coconut",
+        "Cotton (Kapas)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00317943",
+        "kcc_chunk_kcc_00352099",
+        "kcc_chunk_kcc_00541697"
+      ],
+      "gate_verdict": "crop_mismatch",
+      "gate_best_score": 0.4027,
+      "gate_best_crop": "Turmeric",
+      "gate_best_id": "kcc_chunk_kcc_00317943",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_18",
+      "query": "What is the recommended grafting method for Brazilian Dragon Fruit in winter?",
+      "category": "unsupported_crop",
+      "guard_action": "proceed",
+      "detected_crop": "Dragon Fruit",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.4247,
+        0.2784,
+        0.2557
+      ],
+      "raw_top_crops": [
+        "Ber",
+        "Chillies",
+        "Pomegranate"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00121371",
+        "kcc_chunk_kcc_00510007",
+        "kcc_chunk_kcc_00386501"
+      ],
+      "gate_verdict": "crop_mismatch",
+      "gate_best_score": 0.4247,
+      "gate_best_crop": "Ber",
+      "gate_best_id": "kcc_chunk_kcc_00121371",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_19",
+      "query": "Pruning and training technique for kiwi fruit vines",
+      "category": "unsupported_crop",
+      "guard_action": "proceed",
+      "detected_crop": "Kiwi",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.2997,
+        0.2908,
+        0.2687
+      ],
+      "raw_top_crops": [
+        "Coconut",
+        "Tomato",
+        "Tomato"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00352099",
+        "kcc_chunk_kcc_00594961",
+        "kcc_chunk_kcc_00027200"
+      ],
+      "gate_verdict": "evidence_absent",
+      "gate_best_score": 0.2997,
+      "gate_best_crop": "Coconut",
+      "gate_best_id": "kcc_chunk_kcc_00352099",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_20",
+      "query": "Control of yellow rust disease in wheat crop",
+      "category": "crop_mismatch",
+      "guard_action": "proceed",
+      "detected_crop": "Wheat",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.366,
+        0.3371,
+        0.3299
+      ],
+      "raw_top_crops": [
+        "Groundnut (pea nut/mung phalli)",
+        "Tomato",
+        "Bhindi(Okra/Ladysfinger)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00027200",
+        "kcc_chunk_kcc_00043945"
+      ],
+      "gate_verdict": "crop_mismatch",
+      "gate_best_score": 0.366,
+      "gate_best_crop": "Groundnut (pea nut/mung phalli)",
+      "gate_best_id": "kcc_chunk_kcc_00439293",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_21",
+      "query": "Maize fall armyworm chemical pesticide control",
+      "category": "crop_mismatch",
+      "guard_action": "proceed",
+      "detected_crop": "Maize",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.418,
+        0.4088,
+        0.4046
+      ],
+      "raw_top_crops": [
+        "Satawar",
+        "Paddy (Dhan)",
+        "Green Gram (Moong Bean/ Moong)"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00563633",
+        "kcc_chunk_kcc_00349222",
+        "kcc_chunk_kcc_00456483"
+      ],
+      "gate_verdict": "crop_mismatch",
+      "gate_best_score": 0.418,
+      "gate_best_crop": "Satawar",
+      "gate_best_id": "kcc_chunk_kcc_00563633",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_22",
+      "query": "Fungicide for powdery mildew in barley",
+      "category": "crop_mismatch",
+      "guard_action": "proceed",
+      "detected_crop": "Barley",
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.3635,
+        0.2973,
+        0.29
+      ],
+      "raw_top_crops": [
+        "Groundnut (pea nut/mung phalli)",
+        "Black Gram (urd bean)",
+        "Guava"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00439293",
+        "kcc_chunk_kcc_00503228",
+        "kcc_chunk_kcc_00507570"
+      ],
+      "gate_verdict": "crop_mismatch",
+      "gate_best_score": 0.3635,
+      "gate_best_crop": "Groundnut (pea nut/mung phalli)",
+      "gate_best_id": "kcc_chunk_kcc_00439293",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_23",
+      "query": "My leaves have yellow spots and are curling. What spray should I use?",
+      "category": "ambiguous_query",
+      "guard_action": "clarify_crop",
+      "detected_crop": null,
+      "retrieval_called": false
+    },
+    {
+      "query_id": "eval_24",
+      "query": "What medicine to spray for worms in my field?",
+      "category": "ambiguous_query",
+      "guard_action": "clarify_crop",
+      "detected_crop": null,
+      "retrieval_called": false
+    },
+    {
+      "query_id": "eval_25",
+      "query": "Plants are drying and leaves turning yellow, what medicine to apply?",
+      "category": "ambiguous_query",
+      "guard_action": "abstain_offtopic",
+      "detected_crop": null,
+      "retrieval_called": false
+    },
+    {
+      "query_id": "eval_26",
+      "query": "Severe insect pest attack on leaves, which chemical pesticide should I spray?",
+      "category": "ambiguous_query",
+      "guard_action": "clarify_crop",
+      "detected_crop": null,
+      "retrieval_called": false
+    },
+    {
+      "query_id": "eval_27",
+      "query": "How do I configure a React frontend router in Node.js?",
+      "category": "non_agricultural_or_dynamic",
+      "guard_action": "abstain_offtopic",
+      "detected_crop": null,
+      "retrieval_called": false
+    },
+    {
+      "query_id": "eval_28",
+      "query": "What is the capital of France and who is the president?",
+      "category": "non_agricultural_or_dynamic",
+      "guard_action": "proceed",
+      "detected_crop": null,
+      "retrieval_called": true,
+      "raw_top_scores": [
+        0.0633,
+        0.0461,
+        0.0445
+      ],
+      "raw_top_crops": [
+        "Pomegranate",
+        "Guava",
+        "Mustard"
+      ],
+      "raw_top_ids": [
+        "kcc_chunk_kcc_00386501",
+        "kcc_chunk_kcc_00507570",
+        "kcc_chunk_kcc_00096704"
+      ],
+      "gate_verdict": "evidence_absent",
+      "gate_best_score": 0.0633,
+      "gate_best_crop": "Pomegranate",
+      "gate_best_id": "kcc_chunk_kcc_00386501",
+      "promoted_rank": 1
+    },
+    {
+      "query_id": "eval_29",
+      "query": "Will it rain tomorrow in Mehsana district Gujarat?",
+      "category": "non_agricultural_or_dynamic",
+      "guard_action": "abstain_dynamic",
+      "detected_crop": null,
+      "retrieval_called": false
+    },
+    {
+      "query_id": "eval_30",
+      "query": "When will the 10th installment of PM Kisan scheme be deposited?",
+      "category": "non_agricultural_or_dynamic",
+      "guard_action": "abstain_dynamic",
+      "detected_crop": null,
+      "retrieval_called": false
+    }
+  ]
+}
