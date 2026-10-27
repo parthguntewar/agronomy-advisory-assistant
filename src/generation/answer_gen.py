@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from src.retrieval.vector_store import RetrievalResult
 from src.guard.relevance_gate import GateResult, GateVerdict
@@ -47,6 +47,7 @@ class GenerationStatus(str, Enum):
     """Status of the answer generation attempt."""
     SUCCESS = "success"                    # Answer generated from sufficient evidence
     WEAK_EVIDENCE = "weak_evidence"        # Answer generated but evidence is uncertain
+    FALLBACK = "fallback"                  # Requested LLM failed; deterministic template fallback used
     ABSTAINED_NO_EVIDENCE = "abstained_no_evidence"  # No evidence; no answer generated
     ABSTAINED_CROP_MISMATCH = "abstained_crop_mismatch"  # Crop mismatch; blocked
     ABSTAINED_DYNAMIC = "abstained_dynamic"             # Live data requested
@@ -68,6 +69,9 @@ class GeneratedAnswer:
         safety_notice: Mandatory agronomic safety disclaimer.
         uncertainty_note: If weak evidence, explains the limitation.
         abstention_reason: If abstained, explains why no answer was given.
+        provider_used: Identifier of the provider or fallback that synthesized the response.
+        is_fallback: True if the configured provider failed and fallback template was used.
+        fallback_reason: Detailed error message explaining why fallback occurred.
     """
     status: GenerationStatus
     answer_text: str
@@ -78,10 +82,17 @@ class GeneratedAnswer:
     safety_notice: str = AGRONOMIC_SAFETY_NOTICE
     uncertainty_note: Optional[str] = None
     abstention_reason: Optional[str] = None
+    provider_used: str = "mock"
+    is_fallback: bool = False
+    fallback_reason: Optional[str] = None
 
     @property
     def is_answered(self) -> bool:
-        return self.status in (GenerationStatus.SUCCESS, GenerationStatus.WEAK_EVIDENCE)
+        return self.status in (
+            GenerationStatus.SUCCESS,
+            GenerationStatus.WEAK_EVIDENCE,
+            GenerationStatus.FALLBACK,
+        )
 
     def to_display_text(self) -> str:
         """Formats the answer for CLI/UI display with all caveats."""
@@ -91,6 +102,8 @@ class GeneratedAnswer:
             lines.append("ADVISORY RESPONSE (Evidence-Grounded)")
         elif self.status == GenerationStatus.WEAK_EVIDENCE:
             lines.append("ADVISORY RESPONSE (Low-Confidence Evidence)")
+        elif self.status == GenerationStatus.FALLBACK:
+            lines.append("ADVISORY RESPONSE (Deterministic Template Fallback)")
         elif self.status == GenerationStatus.ABSTAINED_NO_EVIDENCE:
             lines.append("UNABLE TO ANSWER: No Relevant Evidence Found")
         elif self.status == GenerationStatus.ABSTAINED_CROP_MISMATCH:
@@ -100,6 +113,13 @@ class GeneratedAnswer:
         elif self.status == GenerationStatus.ABSTAINED_OFFTOPIC:
             lines.append("UNABLE TO ANSWER: Query Not Related to Agriculture")
         lines.append("=" * 70)
+
+        if self.is_fallback:
+            lines.append(
+                f"[FALLBACK NOTICE] Configured provider failed: {self.fallback_reason or 'unknown error'}. "
+                "Output generated from verified deterministic fallback template, not direct LLM generation."
+            )
+            lines.append("")
 
         if self.answer_text:
             lines.append(self.answer_text)
@@ -120,6 +140,7 @@ class GeneratedAnswer:
             if self.crops_cited:
                 lines.append(f"  Crops in evidence: {', '.join(set(self.crops_cited))}")
             lines.append(f"  Attribution: {self.provenance_note}")
+            lines.append(f"  Provider Used: {self.provider_used} (Fallback: {self.is_fallback})")
             lines.append("")
 
         lines.append(f"NOTICE: {self.safety_notice}")
@@ -188,7 +209,7 @@ class AnswerGenerator:
         crops = [c.crop_clean for c in evidence_chunks]
 
         # Synthesize answer text using the configured provider
-        answer_text = self._synthesize_answer(
+        answer_text, is_fallback, provider_used, fallback_reason = self._synthesize_answer(
             query=query,
             chunks=evidence_chunks,
             is_weak=(verdict == GateVerdict.EVIDENCE_WEAK),
@@ -201,6 +222,9 @@ class AnswerGenerator:
                 source_ids=source_ids,
                 evidence_scores=scores,
                 crops_cited=crops,
+                provider_used=provider_used,
+                is_fallback=is_fallback,
+                fallback_reason=fallback_reason,
             )
         else:  # EVIDENCE_WEAK
             return GeneratedAnswer(
@@ -209,6 +233,9 @@ class AnswerGenerator:
                 source_ids=source_ids,
                 evidence_scores=scores,
                 crops_cited=crops,
+                provider_used=provider_used,
+                is_fallback=is_fallback,
+                fallback_reason=fallback_reason,
                 uncertainty_note=(
                     "The retrieved evidence has a low relevance score and may not "
                     "directly address your question. The information below is the "
@@ -223,37 +250,53 @@ class AnswerGenerator:
         query: str,
         chunks: List[RetrievalResult],
         is_weak: bool = False,
-    ) -> str:
+    ) -> Tuple[str, bool, str, Optional[str]]:
         """
         Synthesizes the answer text using the active LLM provider.
         If using default MockProvider without custom canned responses, produces
         the standard structured format. If an LLM error occurs, falls back gracefully.
+        
+        Returns:
+            Tuple of (answer_text, is_fallback, provider_used, fallback_reason)
         """
+        provider_name = self.provider.get_provider_name()
+
         # If using standard MockProvider without custom responses, use deterministic template
         if (
             isinstance(self.provider, MockProvider)
             and not self.provider.canned_responses
             and not self.provider.default_response
         ):
-            return self._format_evidence_answer(query, chunks)
+            return self._format_evidence_answer(query, chunks), False, "mock", None
 
         prompt = self._build_llm_prompt(query, chunks, is_weak=is_weak)
 
         try:
-            return self.provider.generate(prompt=prompt, system_prompt=SYSTEM_PROMPT)
+            text = self.provider.generate(prompt=prompt, system_prompt=SYSTEM_PROMPT)
+            return text, False, provider_name, None
         except LLMError as e:
             logger.warning(
-                f"[AnswerGenerator] LLM provider '{self.provider.get_provider_name()}' "
+                f"[AnswerGenerator] LLM provider '{provider_name}' "
                 f"failed: {e}. Falling back to structured evidence template."
             )
             # Safe fallback to deterministic template
-            return self._format_evidence_answer(query, chunks)
+            return (
+                self._format_evidence_answer(query, chunks),
+                True,
+                "deterministic_template_fallback",
+                f"LLMError in provider '{provider_name}': {str(e)}",
+            )
         except Exception as e:
             logger.error(
-                f"[AnswerGenerator] Unexpected failure in provider '{self.provider.get_provider_name()}': {e}. "
+                f"[AnswerGenerator] Unexpected failure in provider '{provider_name}': {e}. "
                 "Falling back to structured evidence template."
             )
-            return self._format_evidence_answer(query, chunks)
+            return (
+                self._format_evidence_answer(query, chunks),
+                True,
+                "deterministic_template_fallback",
+                f"Unexpected error in provider '{provider_name}': {str(e)}",
+            )
 
     def _build_llm_prompt(
         self,

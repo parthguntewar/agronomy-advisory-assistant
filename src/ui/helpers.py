@@ -126,6 +126,9 @@ def extract_pipeline_diagnostics(result: PipelineResult) -> Dict[str, Any]:
             "has_uncertainty_note": result.generated_answer.uncertainty_note is not None,
             "uncertainty_note": result.generated_answer.uncertainty_note or None,
             "abstention_reason": result.generated_answer.abstention_reason or None,
+            "provider_used": getattr(result.generated_answer, "provider_used", "unknown"),
+            "is_fallback": getattr(result.generated_answer, "is_fallback", False),
+            "fallback_reason": getattr(result.generated_answer, "fallback_reason", None),
         }
     else:
         gen_info = {
@@ -136,6 +139,9 @@ def extract_pipeline_diagnostics(result: PipelineResult) -> Dict[str, Any]:
             "has_uncertainty_note": False,
             "uncertainty_note": None,
             "abstention_reason": None,
+            "provider_used": NOT_REACHED,
+            "is_fallback": False,
+            "fallback_reason": None,
         }
 
     # Stage 5: Verification

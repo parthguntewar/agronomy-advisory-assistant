@@ -118,10 +118,86 @@ class RelevanceGate:
                 reason="Vector store returned zero results.",
             )
 
-        best = results[0]
+        best_raw = results[0]
+        best_raw_score = best_raw.similarity_score
+
+        # ── Gate 1: Minimum viable threshold on best raw score ───────────
+        if best_raw_score < self.minimum_viable_threshold:
+            return GateResult(
+                verdict=GateVerdict.EVIDENCE_ABSENT,
+                best_score=best_raw_score,
+                best_chunk=best_raw,
+                all_chunks=results,
+                detected_query_crop=query_crop,
+                reason=(
+                    f"Best similarity score ({best_raw_score:.4f}) is below minimum viable "
+                    f"threshold ({self.minimum_viable_threshold}). "
+                    "No sufficiently relevant evidence found for this query."
+                ),
+            )
+
+        # ── Gate 2: Multi-chunk Crop compatibility check ─────────────────
+        if query_crop is not None:
+            # Look for any chunk that is crop-compatible with query_crop
+            crop_compatible = [
+                r for r in results
+                if self._check_crop_mismatch(query_crop, r) is None
+            ]
+            if not crop_compatible:
+                mismatch_desc = self._check_crop_mismatch(query_crop, best_raw) or (
+                    f"Query crop '{query_crop}' does not match any retrieved chunk "
+                    f"(top match was '{best_raw.crop_clean}')."
+                )
+                return GateResult(
+                    verdict=GateVerdict.CROP_MISMATCH,
+                    best_score=best_raw_score,
+                    best_chunk=best_raw,
+                    all_chunks=results,
+                    detected_query_crop=query_crop,
+                    crop_mismatch_detail=mismatch_desc,
+                    reason=(
+                        f"Query crop '{query_crop}' does not match retrieved crop "
+                        f"'{best_raw.crop_clean}'. Providing this evidence could result "
+                        "in incorrect crop-specific chemical advice."
+                    ),
+                )
+            # Prioritize the best crop-compatible chunk
+            best = crop_compatible[0]
+            candidate_chunks = crop_compatible
+        else:
+            # QueryGuard did not detect a crop name: check if retrieved chunks are mentioned
+            crop_mentioned = [
+                r for r in results
+                if self._is_chunk_crop_mentioned(query, r)
+            ]
+            if crop_mentioned:
+                best = crop_mentioned[0]
+                candidate_chunks = crop_mentioned
+            elif self._has_advisory_intent(query):
+                # Query has specific agronomic intent but unindexed/unmentioned crop evidence was retrieved
+                return GateResult(
+                    verdict=GateVerdict.CROP_MISMATCH,
+                    best_score=best_raw_score,
+                    best_chunk=best_raw,
+                    all_chunks=results,
+                    detected_query_crop=None,
+                    crop_mismatch_detail=(
+                        f"Retrieved crop '{best_raw.crop_clean}' is not mentioned in your query. "
+                        "Cannot safely apply crop-specific advice without establishing crop compatibility."
+                    ),
+                    reason=(
+                        f"The query asks for agricultural advisory without specifying '{best_raw.crop_clean}', "
+                        f"but nearest-neighbor search returned '{best_raw.crop_clean}' evidence. "
+                        "To prevent dangerous chemical misapplication across different crops, the system will not guess."
+                    ),
+                )
+            else:
+                best = best_raw
+                candidate_chunks = results
+
         best_score = best.similarity_score
 
-        # ── Gate 1: Minimum viable threshold ─────────────────────────────
+        # ── Gate 3: Check minimum viable threshold on compatible chunk ───
         if best_score < self.minimum_viable_threshold:
             return GateResult(
                 verdict=GateVerdict.EVIDENCE_ABSENT,
@@ -130,32 +206,14 @@ class RelevanceGate:
                 all_chunks=results,
                 detected_query_crop=query_crop,
                 reason=(
-                    f"Best similarity score ({best_score:.4f}) is below minimum viable "
+                    f"Best compatible similarity score ({best_score:.4f}) is below minimum viable "
                     f"threshold ({self.minimum_viable_threshold}). "
                     "No sufficiently relevant evidence found for this query."
                 ),
             )
 
-        # ── Gate 2: Crop compatibility check ─────────────────────────────
-        if query_crop is not None:
-            mismatch = self._check_crop_mismatch(query_crop, best)
-            if mismatch:
-                return GateResult(
-                    verdict=GateVerdict.CROP_MISMATCH,
-                    best_score=best_score,
-                    best_chunk=best,
-                    all_chunks=results,
-                    detected_query_crop=query_crop,
-                    crop_mismatch_detail=mismatch,
-                    reason=(
-                        f"Query crop '{query_crop}' does not match retrieved crop "
-                        f"'{best.crop_clean}'. Providing this evidence could result "
-                        "in incorrect crop-specific chemical advice."
-                    ),
-                )
-
-        # ── Gate 3: Sufficient vs weak evidence ───────────────────────────
-        sufficient = [r for r in results if r.similarity_score >= self.sufficient_threshold]
+        # ── Gate 4: Sufficient vs weak evidence ───────────────────────────
+        sufficient = [r for r in candidate_chunks if r.similarity_score >= self.sufficient_threshold]
 
         if sufficient:
             return GateResult(
@@ -187,26 +245,30 @@ class RelevanceGate:
                 ),
             )
 
-    @staticmethod
-    def _check_crop_mismatch(query_crop: str, result: RetrievalResult) -> Optional[str]:
+    ALIASES: dict = {
+        "paddy": {"rice", "dhan"},
+        "rice": {"paddy", "dhan"},
+        "maize": {"corn"},
+        "corn": {"maize"},
+        "arhar": {"tur", "pigeon pea"},
+        "tur": {"arhar", "pigeon pea"},
+        "moong": {"green gram", "mung"},
+        "urad": {"black gram"},
+        "bhindi": {"okra", "ladysfinger", "ladyfinger"},
+        "okra": {"bhindi", "ladysfinger", "ladyfinger"},
+        "groundnut": {"peanut", "pea nut", "mung phalli", "mungphalli"},
+        "chilli": {"chillies", "chili", "mirch"},
+        "chillies": {"chilli", "chili", "mirch"},
+        "satawar": {"shatavari", "satavar"},
+        "dragon fruit": {"pitaya", "pitahaya"},
+    }
+
+    @classmethod
+    def _check_crop_mismatch(cls, query_crop: str, result: RetrievalResult) -> Optional[str]:
         """
         Checks whether the retrieved chunk's crop is incompatible with the query crop.
         Returns a mismatch description string if there is a mismatch, else None.
-        
-        Uses normalized substring matching — not exact equality — to handle
-        aliases like "Paddy" vs "Paddy (Dhan)" vs "rice".
         """
-        ALIASES: dict = {
-            "paddy": {"rice", "dhan"},
-            "rice": {"paddy", "dhan"},
-            "maize": {"corn"},
-            "corn": {"maize"},
-            "arhar": {"tur", "pigeon pea"},
-            "tur": {"arhar", "pigeon pea"},
-            "moong": {"green gram", "mung"},
-            "urad": {"black gram"},
-        }
-
         q_norm = query_crop.lower().strip()
         r_norm = result.crop_clean.lower().strip()
 
@@ -215,11 +277,42 @@ class RelevanceGate:
             return None
         if q_norm in r_norm or r_norm in q_norm:
             return None
-        for alias_set in ALIASES.values():
-            if q_norm in alias_set and r_norm in alias_set:
+        for alias_set in cls.ALIASES.values():
+            if (q_norm in alias_set or any(a in q_norm for a in alias_set)) and (
+                r_norm in alias_set or any(a in r_norm for a in alias_set)
+            ):
                 return None
 
         return (
             f"Query crop '{query_crop}' vs retrieved chunk crop '{result.crop_clean}'. "
             "These are different crops; advisory evidence may not be applicable."
         )
+
+    @classmethod
+    def _is_chunk_crop_mentioned(cls, query: str, result: RetrievalResult) -> bool:
+        """
+        Checks whether the retrieved chunk's crop (or any of its known aliases/tokens)
+        is actually mentioned in the user's query text.
+        """
+        q_lower = query.lower()
+        r_crop = result.crop_clean.lower()
+        tokens = [t for t in re.findall(r"\b[a-z]{3,}\b", r_crop) if t not in {"crop", "bean", "peas"}]
+        for token in tokens:
+            if re.search(r"\b" + re.escape(token) + r"\b", q_lower):
+                return True
+        for alias_set in cls.ALIASES.values():
+            if any(t in alias_set for t in tokens):
+                if any(re.search(r"\b" + re.escape(alias) + r"\b", q_lower) for alias in alias_set):
+                    return True
+        return False
+
+    @staticmethod
+    def _has_advisory_intent(query: str) -> bool:
+        """Checks if the query has specific agronomic treatment, disease, or cultivation intent."""
+        keywords = [
+            "disease", "pest", "insect", "spray", "pesticide", "fertilizer", "dose", "dosage",
+            "treatment", "control", "fungus", "blight", "rot", "mildew", "rust", "grafting",
+            "pruning", "planting", "cultivation", "seed", "variety", "weed", "chemical", "worm"
+        ]
+        q_lower = query.lower()
+        return any(k in q_lower for k in keywords)

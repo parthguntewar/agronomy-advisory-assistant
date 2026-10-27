@@ -43,15 +43,18 @@ _AGRI_CROP_TERMS: Set[str] = {
     "cauliflower", "okra", "bhindi", "pea", "beans", "cucumber",
     "gourd", "pumpkin", "mango", "banana", "papaya", "guava", "pomegranate",
     "grapes", "orange", "lemon", "lime", "apple", "pear", "jackfruit",
-    "strawberry", "watermelon", "melon",
-    # Cash Crops
+    "strawberry", "watermelon", "melon", "avocado", "dragon fruit", "kiwi",
+    "fig", "anjeer", "litchi", "lychee", "quinoa", "chia", "passion fruit",
+    "custard apple", "sitaphal",
+    # Cash & Commercial Crops
     "cotton", "sugarcane", "jute", "tobacco", "hemp", "rubber",
-    # Spices & Plantation
+    # Spices, Herbs & Plantation
     "turmeric", "ginger", "cardamom", "pepper", "chilli", "coriander",
-    "cumin", "fenugreek", "garlic", "tea", "coffee", "coconut",
+    "cumin", "fenugreek", "garlic", "tea", "coffee", "coconut", "oil palm",
+    "clove", "nutmeg", "saffron",
     # Misc Indian crops from KB sample
     "satawar", "ber", "amla", "drumstick", "moringa", "cluster bean",
-    "bottle gourd", "ridge gourd", "bitter gourd", "aonla",
+    "bottle gourd", "ridge gourd", "bitter gourd", "aonla", "cashew", "walnut", "almond",
 }
 
 # ---------------------------------------------------------------------------
@@ -77,23 +80,27 @@ _DYNAMIC_INDICATORS: List[str] = [
 # Indicator phrases for disease/pest/spray queries
 # ---------------------------------------------------------------------------
 _DISEASE_PEST_INDICATORS: List[str] = [
-    r"\b(disease|pest|insect|fungus|fungi|virus|bacteria|nematode|worm|borer|aphid|mite|thrips|whitefly|caterpillar|larva)\b",
+    r"\b(disease|pest|insect|fungus|fungi|virus|bacteria|nematode|worm|borer|aphid|mite|thrips|whitefly|caterpillar|larva|mildew|canker|scab|smut|blast|anthracnose)\b",
     r"\b(spray|pesticide|insecticide|fungicide|herbicide|weedicide|chemical|dawa|davai)\b",
-    r"\b(yellow(ing)?|spot(s)?|curl(ing)?|wilt(ing)?|rot|blight|rust|mosaic|lesion|necrosis)\b",
+    r"\b(yellow(ing)?|spot(s)?|curl(ing)?|wilt(ing)?|rot|blight|rust|mosaic|lesion|necrosis|damping off)\b",
     r"\b(attack|infestation|damage|infected|affected|sick|dying)\b",
-    r"\b(control|treat|prevent|manage|application|dose|dosage|recommendation)\b.*\b(disease|pest|insect|spray|chemical)\b",
+    r"\b(control|treat|prevent|manage|application|dose|dosage|recommendation)\b.*\b(disease|pest|insect|spray|chemical|mildew|rot)\b",
 ]
 
 # ---------------------------------------------------------------------------
-# Crop name extraction: simple heuristic regex patterns
+# Crop name extraction: regex patterns
 # ---------------------------------------------------------------------------
 _CROP_PATTERNS: List[re.Pattern] = [
-    # "in my wheat crop" / "in my paddy field"
-    re.compile(r"\bin\s+(?:my\s+)?(\w[\w\s]{1,20}?)\s+(?:crop|field|plant|farm|garden|orchard)\b", re.I),
-    # "for wheat" / "for paddy crop" — only for known crop names
-    re.compile(r"\bfor\s+(wheat|rice|paddy|cotton|tomato|potato|onion|maize|soybean|groundnut|sugarcane|brinjal|okra|mustard|tea|coffee|mango|banana|turmeric|ginger|chilli|satawar|ber|arhar|moong|urad|jowar|bajra|ragi|sorghum|barley|lentil|cowpea|sunflower|sesame|castor|guava|pomegranate|grapes|orange|lemon|apple|watermelon|cumin|coriander|fenugreek|garlic|cardamom|pepper|rubber|jute|tobacco|hemp|coconut|moringa|drumstick|amla|aonla)\b", re.I),
-    # Stand-alone crop names at word boundaries — only known crop vocabulary
-    re.compile(r"\b(wheat|rice|paddy|cotton|tomato|potato|onion|maize|soybean|groundnut|sugarcane|brinjal|okra|mustard|tea|coffee|mango|banana|turmeric|ginger|chilli|satawar|ber|arhar|moong|urad|jowar|bajra|ragi|sorghum|barley|lentil|cowpea|sunflower|sesame|castor|guava|pomegranate|grapes|orange|lemon|apple|watermelon|cumin|coriander|fenugreek|garlic|cardamom|pepper|rubber|jute|tobacco|hemp|coconut|moringa|drumstick|amla|aonla)\b", re.I),
+    # "in my wheat crop" / "in my paddy field" / "for avocado trees"
+    re.compile(r"\b(?:for|in|on|of|about)\s+(?:my\s+)?([A-Za-z][A-Za-z\s]{1,25}?)\s+(?:crop|field|plants?|trees?|farm|garden|orchard|cultivation|farming)\b", re.I),
+    # "satawar plants" / "quinoa crop" / "avocado trees" / "dragon fruit farming"
+    re.compile(r"\b([A-Za-z][A-Za-z\s]{1,25}?)\s+(?:crop|plants?|trees?|farming|cultivation|orchard)\b", re.I),
+    # "grafting method for Brazilian Dragon Fruit" / "fertilizing Hass avocado"
+    re.compile(r"\b(?:grafting|planting|growing|fertilizing|spraying|cultivating)\s+(?:method\s+for\s+|of\s+)?([A-Za-z][A-Za-z\s]{1,25}?)(?:\s+(?:in|trees?|plants?|crop))?\b", re.I),
+    # "Quinoa downy mildew" / "Apple scab"
+    re.compile(r"\b([A-Za-z][A-Za-z\s]{1,25}?)\s+(?:downy\s+mildew|powdery\s+mildew|leaf\s+curl|blight|rust|canker|wilt|rot|blast|anthracnose)\b", re.I),
+    # Known crop vocabulary fallback
+    re.compile(r"\b(wheat|rice|paddy|cotton|tomato|potato|onion|maize|soybean|groundnut|sugarcane|brinjal|okra|mustard|tea|coffee|mango|banana|turmeric|ginger|chilli|satawar|ber|arhar|moong|urad|jowar|bajra|ragi|sorghum|barley|lentil|cowpea|sunflower|sesame|castor|guava|pomegranate|grapes|orange|lemon|apple|watermelon|cumin|coriander|fenugreek|garlic|cardamom|pepper|rubber|jute|tobacco|hemp|coconut|moringa|drumstick|amla|aonla|dragon\s+fruit|avocado|quinoa|chia|kiwi|fig|anjeer|litchi|lychee|cashew|walnut|almond)\b", re.I),
 ]
 
 # ---------------------------------------------------------------------------
@@ -282,32 +289,52 @@ class QueryGuard:
 
     @staticmethod
     def _has_agricultural_context(q_lower: str) -> bool:
-        """Broad check: does the query contain any agricultural vocabulary?"""
+        """Broad check: does the query contain any agricultural vocabulary with word boundaries?"""
         agri_broad = [
-            "crop", "farm", "field", "seed", "fertilizer", "pesticide",
-            "irrigation", "harvest", "sow", "yield", "soil", "manure",
-            "compost", "kisan", "krishi", "kheti", "fasal",
+            "crop", "crops", "farm", "farming", "field", "fields", "seed", "seeds",
+            "fertilizer", "fertilizers", "pesticide", "pesticides", "irrigation",
+            "harvest", "sow", "sowing", "yield", "soil", "manure", "compost",
+            "kisan", "krishi", "kheti", "fasal",
         ]
         for term in agri_broad:
-            if term in q_lower:
+            if re.search(r"\b" + re.escape(term) + r"\b", q_lower):
                 return True
-        # Check against crop name vocabulary
+        # Check against crop name vocabulary with word boundaries
         for crop_term in _AGRI_CROP_TERMS:
-            if crop_term in q_lower:
+            if re.search(r"\b" + re.escape(crop_term) + r"\b", q_lower):
                 return True
         return False
 
     @staticmethod
     def _extract_crop(query: str) -> Optional[str]:
         """
-        Attempts to extract a crop name from the query using ordered regex patterns.
-        Returns the first successful match, or None.
+        Attempts to extract a crop name from the query using ordered regex patterns
+        and taxonomy validation.
+        Returns the first validated match, or None.
         """
+        CROP_STOPWORDS = {
+            "my", "the", "a", "an", "this", "that", "some", "any", "control", "treat",
+            "treatment", "manage", "management", "best", "good", "organic", "chemical",
+            "spray", "pesticide", "fertilizer", "insect", "insects", "pest", "pests",
+            "disease", "diseases", "fungus", "leaf", "leaves", "root", "roots", "field",
+            "crop", "plants", "trees", "farm", "farming", "cultivation", "seed", "seeds"
+        }
+
+        # 1. Direct multi-word and known crop checks first (longest match priority)
+        q_lower = query.lower()
+        for term in sorted(_AGRI_CROP_TERMS, key=len, reverse=True):
+            # Check with word boundary
+            if re.search(r"\b" + re.escape(term) + r"\b", q_lower):
+                return term.strip().title()
+
+        # 2. Structural extraction patterns
         for pat in _CROP_PATTERNS:
             m = pat.search(query)
             if m:
-                # The matched crop name is in the last non-None group
                 groups = [g for g in m.groups() if g is not None]
                 if groups:
-                    return groups[-1].strip().title()
+                    candidate = groups[-1].strip()
+                    cand_clean = candidate.lower()
+                    if cand_clean not in CROP_STOPWORDS and len(cand_clean) >= 3:
+                        return candidate.title()
         return None

@@ -235,7 +235,10 @@ class GuardedRAGPipeline:
         # ── Stage 5: Post-Generation Verification ─────────────────────────
         stages.append("Verification")
         evidence_for_verification = (
-            gate_result.sufficient_chunks or gate_result.all_chunks or []
+            gate_result.sufficient_chunks
+            or ([gate_result.best_chunk] if gate_result.best_chunk else [])
+            or gate_result.all_chunks
+            or []
         )
         verification = self.verifier.verify(generated, evidence_for_verification)
         result.verification_result = verification

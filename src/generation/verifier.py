@@ -66,26 +66,53 @@ class VerificationResult:
 
 # ---------------------------------------------------------------------------
 # Chemical / agrochemical token patterns
-# Used to detect specific claims in generated text that must be grounded.
+# Expanded catalog of common agricultural active ingredients and formulations.
+# Note: This is a structural heuristic and does NOT provide 100% chemical safety coverage.
 # ---------------------------------------------------------------------------
 _CHEMICAL_PATTERNS: List[re.Pattern] = [
-    # Dosage patterns: "X ml/litre", "X g/ha", "X kg/acre" etc.
-    re.compile(r"\b\d+\.?\d*\s*(?:ml|g|kg|gm|liter|litre|L)\s*/\s*(?:litre|liter|ha|hectare|acre|plant|tree|l)\b", re.I),
-    # Active ingredient / product name followed by dose
-    re.compile(r"\b(?:spray|apply|use|mix)\s+\d+\.?\d*\s*(?:ml|g|kg|gm)\b", re.I),
-    # Specific chemical name indicators (common in KCC data)
-    re.compile(r"\b(?:chlorpyrifos|imidacloprid|thiamethoxam|lambda-cyhalothrin|profenofos|carbendazim|mancozeb|copper sulphate|tricel|urea|dap|npk|potash|zinc sulphate|borax|sulphur|emamectin|spinosad|azoxystrobin|propiconazole|tebuconazole|monocrotophos)\b", re.I),
+    # Explicit active ingredients and commercial formulations (including known blind spots: monosultap, acephate, flubendiamide, paraquat)
+    re.compile(
+        r"\b(?:monosultap|acephate|flubendiamide|paraquat|glyphosate|cartap|cartap hydrochloride|"
+        r"carbofuran|quinalphos|dimethoate|malathion|fipronil|tricyclazole|hexaconazole|"
+        r"metalaxyl|streptocycline|chlorantraniliprole|pendimethalin|atrazine|2,4-d|"
+        r"cypermethrin|deltamethrin|chlorpyrifos|imidacloprid|thiamethoxam|lambda-cyhalothrin|"
+        r"profenofos|carbendazim|mancozeb|copper sulphate|copper oxychloride|tricel|rogor|"
+        r"confidor|bavistin|coragen|urea|dap|npk|potash|zinc sulphate|borax|sulphur|"
+        r"emamectin|emamectin benzoate|spinosad|azoxystrobin|propiconazole|tebuconazole|monocrotophos|"
+        r"endosulfan|phorate)\b",
+        re.I,
+    ),
+    # Agrochemical class suffixes
+    re.compile(r"\b[a-z]{3,}(?:sultap|quat|oxystrobin|fenozide)\b", re.I),
+    # Formulation codes: e.g. 25% EC, 80% WP, 50% SC, 3G
+    re.compile(r"\b\d+\.?\d*\s*%\s*(?:ec|wp|sc|sl|sp|gr|dp|wg|fs|cs)\b", re.I),
+    re.compile(r"\b\d+\.?\d*\s*(?:g|gr)\s+granul(?:es?|ar)\b", re.I),
+    # Dosage patterns: "X ml/litre", "X g/ha", "X kg/acre", "X ml per liter", etc.
+    re.compile(r"\b\d+\.?\d*\s*(?:ml|g|kg|gm|liter|litre|l)\s*(?:/|\bper\b)\s*(?:litre|liter|ha|hectare|acre|plant|tree|l|pump|tank)\b", re.I),
+    # Explicit application rates: e.g., "spray 2 ml", "apply 500 ml/acre"
+    re.compile(r"\b(?:spray|apply|use|mix)\s+\d+\.?\d*\s*(?:ml|g|kg|gm|liter|litre|l)\b", re.I),
+    re.compile(r"\b\d+\.?\d*\s*(?:ml|g|kg|gm)\s+(?:in|per)\s+\d+\.?\d*\s*(?:l|liter|litres?|pani)\b", re.I),
 ]
+
+
+def _normalize_tokens(text: str) -> str:
+    """Normalizes whitespace and common separators for token-level grounding comparison."""
+    t = text.lower()
+    t = re.sub(r"[/\-_,;:()\[\]]", " ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
 
 
 class PostGenerationVerifier:
     """
     Structural safety verifier applied to GeneratedAnswer objects.
     
-    Checks that every substantive claim in the generated answer is traceable
+    Checks that substantive claims in the generated answer are traceable
     to the provided evidence chunks and that source citations are present.
     
-    This is an APPROXIMATE verifier — production use requires an NLI model.
+    IMPORTANT LIMITATION:
+    This is an automated structural/token-level verifier. It reduces ungrounded
+    hallucination risk, but does NOT guarantee 100% agronomic or chemical safety.
     """
 
     def verify(
@@ -103,7 +130,7 @@ class PostGenerationVerifier:
         Returns:
             VerificationResult indicating whether the answer is safe to present.
         """
-        # ── Skip verification for abstentions ────────────────────────────
+        # ── Skip verification strictly for non-advisory abstentions ──────
         if not answer.is_answered:
             return VerificationResult(
                 status=VerificationStatus.SKIPPED_ABSTENTION,
@@ -112,20 +139,15 @@ class PostGenerationVerifier:
                 safe_answer=answer,
             )
 
-        # ── Skip detailed verification for weak evidence ──────────────────
-        if answer.status == GenerationStatus.WEAK_EVIDENCE:
-            return VerificationResult(
-                status=VerificationStatus.SKIPPED_WEAK,
-                original_answer=answer,
-                reason=(
-                    "Answer generated under weak evidence conditions. "
-                    "Structural verification skipped; uncertainty note is already present."
-                ),
-                safe_answer=answer,
-            )
-
         issues: List[str] = []
         warnings: List[str] = []
+
+        # ── Note weak evidence caveat if applicable (do NOT skip verification!) ─
+        if answer.status == GenerationStatus.WEAK_EVIDENCE:
+            warnings.append(
+                "WEAK_EVIDENCE_CAVEAT: Advisory was generated under low-confidence evidence conditions. "
+                "Local expert validation (KVK/SAU) is required before implementing any advice."
+            )
 
         # ── Check 1: Source citation completeness ─────────────────────────
         if not answer.source_ids:
@@ -147,13 +169,15 @@ class PostGenerationVerifier:
             (c.expert_advisory + " " + c.farmer_query).lower()
             for c in evidence_chunks
         )
+        norm_evidence = _normalize_tokens(evidence_text_combined)
 
         ungrounded_claims: List[str] = []
         for pat in _CHEMICAL_PATTERNS:
             for m in pat.finditer(answer_lower):
-                claim = m.group(0).lower()
-                # Check if this exact claim appears in any evidence text
-                if claim not in evidence_text_combined:
+                claim = m.group(0).lower().strip()
+                norm_claim = _normalize_tokens(claim)
+                # Check both exact substring and normalized token match
+                if claim not in evidence_text_combined and norm_claim not in norm_evidence:
                     ungrounded_claims.append(claim)
 
         if ungrounded_claims:
@@ -175,30 +199,21 @@ class PostGenerationVerifier:
 
         # ── Final verdict ─────────────────────────────────────────────────
         if issues:
-            # If there are any issues (not just warnings), block the answer
             blocked_answer = GeneratedAnswer(
-                status=answer.status,
-                answer_text="",  # Clear answer text — do not present it
+                status=GenerationStatus.ABSTAINED_NO_EVIDENCE,
+                answer_text="",
                 source_ids=answer.source_ids,
                 evidence_scores=answer.evidence_scores,
                 crops_cited=answer.crops_cited,
                 safety_notice=answer.safety_notice,
                 abstention_reason=(
-                    "This answer was blocked by the post-generation safety verifier "
-                    "because it contained ungrounded claims not traceable to the "
-                    "retrieved evidence. Issues: " + " | ".join(issues)
-                ),
-            )
-            # Override status to abstained for display
-            blocked_answer = GeneratedAnswer(
-                status=GenerationStatus.ABSTAINED_NO_EVIDENCE,
-                answer_text="",
-                abstention_reason=(
                     "Post-generation verifier blocked this answer due to "
                     "ungrounded chemical claims or missing citations. "
                     "Details: " + " | ".join(issues)
                 ),
-                safety_notice=answer.safety_notice,
+                provider_used=getattr(answer, "provider_used", "mock"),
+                is_fallback=getattr(answer, "is_fallback", False),
+                fallback_reason=getattr(answer, "fallback_reason", None),
             )
             return VerificationResult(
                 status=VerificationStatus.BLOCKED_HALLUCINATION,
